@@ -1,0 +1,16 @@
+PODS:
+  - TranscriptionKit (0.1.0)
+
+DEPENDENCIES:
+  - TranscriptionKit (from `../`)
+
+EXTERNAL SOURCES:
+  TranscriptionKit:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  TranscriptionKit: fe5ff5a0d77c954c2409878b1f4e02555b397804
+
+PODFILE CHECKSUM: f6917b0f36f46296772196ae838f64f6807bc21d
+
+COCOAPODS: 1.10.1
