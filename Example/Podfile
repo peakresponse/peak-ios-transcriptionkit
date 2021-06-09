@@ -1,0 +1,13 @@
+use_frameworks!
+
+platform :ios, '9.0'
+
+target 'TranscriptionKit_Example' do
+  pod 'TranscriptionKit', :path => '../'
+
+  target 'TranscriptionKit_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
