@@ -1,16 +1,23 @@
 PODS:
+  - SwiftLint (0.43.1)
   - TranscriptionKit (0.1.0)
 
 DEPENDENCIES:
+  - SwiftLint
   - TranscriptionKit (from `../`)
+
+SPEC REPOS:
+  trunk:
+    - SwiftLint
 
 EXTERNAL SOURCES:
   TranscriptionKit:
     :path: "../"
 
 SPEC CHECKSUMS:
+  SwiftLint: 99f82d07b837b942dd563c668de129a03fc3fb52
   TranscriptionKit: 7709f315e9b97ee21384d8aed27e914decf68e96
 
-PODFILE CHECKSUM: 2a30320822cea0d1cdb8d6700c154fafad91d5cc
+PODFILE CHECKSUM: d3074ce459b891e5109dcbfe0780a08552c21ef3
 
 COCOAPODS: 1.10.1

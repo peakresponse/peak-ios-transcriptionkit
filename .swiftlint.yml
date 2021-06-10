@@ -1,0 +1,18 @@
+excluded:
+  - Pods
+identifier_name:
+  validates_start_with_lowercase: false
+  allowed_symbols: "_"
+  min_length: 2
+  excluded:
+    - r
+    - g
+    - b
+    - a
+    - h
+    - s
+    - b
+    - i
+    - x
+    - y
+line_length: 140

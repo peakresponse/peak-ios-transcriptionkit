@@ -4,6 +4,7 @@ platform :ios, '12.0'
 
 target 'TranscriptionKit_Example' do
   pod 'TranscriptionKit', :path => '../'
+  pod 'SwiftLint'
 
   target 'TranscriptionKit_Tests' do
     inherit! :search_paths

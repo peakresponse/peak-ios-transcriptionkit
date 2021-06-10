@@ -20,7 +20,7 @@ class ViewController: UIViewController, TranscriberDelegate {
 
     var transcriber: Transcriber?
     var audioInputPortUID: String?
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -36,7 +36,7 @@ class ViewController: UIViewController, TranscriberDelegate {
         alert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
         present(alert, animated: true, completion: nil)
     }
-    
+
     @IBAction func recordPressed(_ sender: Any) {
         if let transcriber = transcriber, recordButton.isSelected {
             transcriber.stopRecording()
@@ -108,19 +108,19 @@ class ViewController: UIViewController, TranscriberDelegate {
             playButton.isSelected = false
         }
     }
-    
+
     // MARK: - TranscriberDelegate
 
     func transcriberDidFinishRecognition(_ transcriber: Transcriber) {
-        
+
     }
 
     func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool) {
         playButton.isSelected = false
     }
-    
+
     func transcriber(_ transcriber: Transcriber, didTransformBuffer data: [Float]) {
-        
+
     }
 
     func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus) {
@@ -162,14 +162,14 @@ class ViewController: UIViewController, TranscriberDelegate {
             self?.timeLabel.text = duration
         }
     }
-    
+
     func transcriber(_ transcriber: Transcriber, didRecord seconds: TimeInterval, formattedDuration duration: String) {
         DispatchQueue.main.async { [weak self] in
             self?.timeLabel.text = duration
         }
     }
 
-    func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, sourceId: String, metadata: [String : Any], isFinal: Bool) {
+    func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, sourceId: String, metadata: [String: Any], isFinal: Bool) {
         DispatchQueue.main.async { [weak self] in
             self?.transcriptLabel.text = text
         }
