@@ -10,24 +10,24 @@ import Accelerate
 import AVFoundation
 import Speech
 
-@objc protocol AudioHelperDelgate {
-    @objc optional func audioHelper(_ audioHelper: AudioHelper, didFinishPlaying successfully: Bool)
-    @objc optional func audioHelper(_ audioHelper: AudioHelper, didPlay seconds: TimeInterval, formattedDuration duration: String)
-    @objc optional func audioHelper(_ audioHelper: AudioHelper, didRecognizeText text: String,
+@objc protocol TranscriberDelegate {
+    @objc optional func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool)
+    @objc optional func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval, formattedDuration duration: String)
+    @objc optional func transcriber(_ transcriber: Transcriber, didRecognizeText text: String,
                                     sourceId: String, metadata: [String: Any], isFinal: Bool)
-    @objc optional func audioHelper(_ audioHelper: AudioHelper, didRecord seconds: TimeInterval, formattedDuration duration: String)
-    @objc optional func audioHelper(_ audioHelper: AudioHelper, didTransformBuffer data: [Float])
-    @objc optional func audioHelperDidFinishRecognition(_ audioHelper: AudioHelper)
-    @objc optional func audioHelper(_ audioHelper: AudioHelper, didRequestRecordAuthorization status: AVAudioSession.RecordPermission)
-    @objc optional func audioHelper(_ audioHelper: AudioHelper, didRequestSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus)
+    @objc optional func transcriber(_ transcriber: Transcriber, didRecord seconds: TimeInterval, formattedDuration duration: String)
+    @objc optional func transcriber(_ transcriber: Transcriber, didTransformBuffer data: [Float])
+    @objc optional func transcriberDidFinishRecognition(_ audioHelper: Transcriber)
+    @objc optional func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: AVAudioSession.RecordPermission)
+    @objc optional func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus)
 }
 
-enum AudioHelperError: Error {
+enum TranscriberError: Error {
     case recordNotAuthorized
     case speechRecognitionNotAuthorized
 }
 
-class AudioHelper: NSObject, AVAudioPlayerDelegate {
+class Transcriber: NSObject, AVAudioPlayerDelegate {
     let audioEngine = AVAudioEngine()
     let speechRecognizer = SFSpeechRecognizer()
     var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -47,7 +47,7 @@ class AudioHelper: NSObject, AVAudioPlayerDelegate {
     }
 
     var audioInputPortUID: String?
-    weak var delegate: AudioHelperDelgate?
+    weak var delegate: TranscriberDelegate?
 
     override init() {
         super.init()
@@ -96,7 +96,7 @@ class AudioHelper: NSObject, AVAudioPlayerDelegate {
             if let seconds = self.player?.currentTime {
                 let duration = String(format: "%02.0f:%02.0f:%02.0f",
                                       seconds / 3600, seconds / 60, seconds.truncatingRemainder(dividingBy: 60))
-                self.delegate?.audioHelper?(self, didPlay: seconds, formattedDuration: duration)
+                self.delegate?.transcriber?(self, didPlay: seconds, formattedDuration: duration)
             }
         }
     }
@@ -170,7 +170,7 @@ class AudioHelper: NSObject, AVAudioPlayerDelegate {
                                 "segments": segmentsMetadata
                             ]
                             if let self = self {
-                                self.delegate?.audioHelper?(self, didRecognizeText: text,
+                                self.delegate?.transcriber?(self, didRecognizeText: text,
                                                             sourceId: sourceId, metadata: metadata, isFinal: isFinal)
                             }
                         }
@@ -184,7 +184,7 @@ class AudioHelper: NSObject, AVAudioPlayerDelegate {
                             self?.recognitionTask = nil
 
                             if let self = self {
-                                self.delegate?.audioHelperDidFinishRecognition?(self)
+                                self.delegate?.transcriberDidFinishRecognition?(self)
                             }
                         }
                     }
@@ -215,20 +215,20 @@ class AudioHelper: NSObject, AVAudioPlayerDelegate {
                             let seconds = self.recordingLength + start.dist(to: now)
                             let duration = String(format: "%02.0f:%02.0f:%02.0f",
                                                   seconds / 3600, seconds / 60, seconds.truncatingRemainder(dividingBy: 60))
-                            self.delegate?.audioHelper?(self, didRecord: seconds, formattedDuration: duration)
+                            self.delegate?.transcriber?(self, didRecord: seconds, formattedDuration: duration)
                         }
                     }
                 }
             } else {
                 SFSpeechRecognizer.requestAuthorization { [weak self] (status) in
                     guard let self = self else { return }
-                    self.delegate?.audioHelper?(self, didRequestSpeechAuthorization: status)
+                    self.delegate?.transcriber?(self, didRequestSpeechAuthorization: status)
                 }
             }
         } else {
             audioSession.requestRecordPermission { [weak self] (granted) in
                 guard let self = self else { return }
-                self.delegate?.audioHelper?(self, didRequestRecordAuthorization: granted ? .granted : .denied)
+                self.delegate?.transcriber?(self, didRequestRecordAuthorization: granted ? .granted : .denied)
             }
         }
     }
@@ -289,7 +289,7 @@ class AudioHelper: NSObject, AVAudioPlayerDelegate {
         vDSP_vsmul(sqrtq(Array(UnsafeBufferPointer(start: magnitudes, count: inputCount))), 1, [2.0 / Float(inputCount)],
                    normalizedMagnitudes, 1, vDSP_Length(inputCount))
 
-        delegate?.audioHelper?(self, didTransformBuffer: Array(UnsafeBufferPointer(start: normalizedMagnitudes, count: inputCount)))
+        delegate?.transcriber?(self, didTransformBuffer: Array(UnsafeBufferPointer(start: normalizedMagnitudes, count: inputCount)))
 
         vDSP_destroy_fftsetup(fftSetup)
     }
@@ -306,10 +306,10 @@ class AudioHelper: NSObject, AVAudioPlayerDelegate {
         if let error = error {
             print(error)
         }
-        delegate?.audioHelper?(self, didFinishPlaying: false)
+        delegate?.transcriber?(self, didFinishPlaying: false)
     }
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        delegate?.audioHelper?(self, didFinishPlaying: flag)
+        delegate?.transcriber?(self, didFinishPlaying: flag)
     }
 }
