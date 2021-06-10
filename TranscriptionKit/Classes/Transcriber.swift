@@ -54,7 +54,6 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
         reset()
     }
 
-    /*
     static var bluetoothHFPInputs: [AVAudioSessionPortDescription] {
         var inputs: [AVAudioSessionPortDescription] = []
         do {
@@ -68,7 +67,6 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
         }
         return inputs
     }
-     */
 
     func reset() {
         player = nil
