@@ -55,7 +55,7 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
         reset()
     }
 
-    static var bluetoothHFPInputs: [AVAudioSessionPortDescription] {
+    public static var bluetoothHFPInputs: [AVAudioSessionPortDescription] {
         var inputs: [AVAudioSessionPortDescription] = []
         do {
             let audioSession = AVAudioSession.sharedInstance()

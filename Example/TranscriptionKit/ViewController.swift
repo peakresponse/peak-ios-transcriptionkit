@@ -19,6 +19,7 @@ class ViewController: UIViewController, TranscriberDelegate {
     @IBOutlet weak var timeLabel: UILabel!
 
     var transcriber: Transcriber?
+    var audioInputPortUID: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -50,6 +51,7 @@ class ViewController: UIViewController, TranscriberDelegate {
         timeLabel.text = nil
 
         transcriber = Transcriber()
+        transcriber?.audioInputPortUID = audioInputPortUID
         transcriber?.delegate = self
         do {
             try transcriber?.startRecording()
@@ -60,7 +62,34 @@ class ViewController: UIViewController, TranscriberDelegate {
     }
 
     @IBAction func btPressed(_ sender: Any) {
-
+        if btButton.isSelected {
+            btButton.isSelected = false
+            audioInputPortUID = nil
+            transcriber?.audioInputPortUID = nil
+        } else {
+            let bluetoothHFPInputs = Transcriber.bluetoothHFPInputs
+            if bluetoothHFPInputs.count == 0 {
+                let alert = UIAlertController(title: "Bluetooth", message: "No Bluetooth devices detected", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+                present(alert, animated: true, completion: nil)
+            } else if bluetoothHFPInputs.count == 1 {
+                audioInputPortUID = bluetoothHFPInputs[0].uid
+                transcriber?.audioInputPortUID = audioInputPortUID
+                btButton.isSelected = true
+            } else if bluetoothHFPInputs.count > 1 {
+                let alert = UIAlertController(title: "Bluetooth", message: nil, preferredStyle: .actionSheet)
+                for bluetoothHFPInput in bluetoothHFPInputs {
+                    alert.addAction(UIAlertAction(title: bluetoothHFPInput.portName, style: .default, handler: { [weak self] (_) in
+                        guard let self = self else { return }
+                        self.audioInputPortUID = bluetoothHFPInput.uid
+                        self.transcriber?.audioInputPortUID = self.audioInputPortUID
+                        self.btButton.isSelected = true
+                    }))
+                }
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+                present(alert, animated: true, completion: nil)
+            }
+        }
     }
 
     @IBAction func playPressed(_ sender: Any) {
