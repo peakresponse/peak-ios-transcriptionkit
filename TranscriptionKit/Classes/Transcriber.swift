@@ -1,6 +1,6 @@
 //
-//  AudioHelper.swift
-//  Triage
+//  Transcriber.swift
+//  TranscriptionKit
 //
 //  Created by Francis Li on 11/14/19.
 //  Copyright © 2019 Francis Li. All rights reserved.
@@ -10,46 +10,47 @@ import Accelerate
 import AVFoundation
 import Speech
 
-@objc protocol TranscriberDelegate {
+@objc public protocol TranscriberDelegate {
     @objc optional func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool)
     @objc optional func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval, formattedDuration duration: String)
     @objc optional func transcriber(_ transcriber: Transcriber, didRecognizeText text: String,
                                     sourceId: String, metadata: [String: Any], isFinal: Bool)
     @objc optional func transcriber(_ transcriber: Transcriber, didRecord seconds: TimeInterval, formattedDuration duration: String)
     @objc optional func transcriber(_ transcriber: Transcriber, didTransformBuffer data: [Float])
-    @objc optional func transcriberDidFinishRecognition(_ audioHelper: Transcriber)
+    @objc optional func transcriberDidFinishRecognition(_ transcriber: Transcriber)
     @objc optional func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: AVAudioSession.RecordPermission)
     @objc optional func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus)
 }
 
-enum TranscriberError: Error {
+public enum TranscriberError: Error {
     case recordNotAuthorized
     case speechRecognitionNotAuthorized
+    case unexpected
 }
 
-class Transcriber: NSObject, AVAudioPlayerDelegate {
+open class Transcriber: NSObject, AVAudioPlayerDelegate {
     let audioEngine = AVAudioEngine()
     let speechRecognizer = SFSpeechRecognizer()
     var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     var recognitionTask: SFSpeechRecognitionTask?
 
-    var fileURL: URL!
-    var recordingLength: TimeInterval = 0
-    var recordingLengthFormatted: String {
+    public var fileURL: URL!
+    public var recordingLength: TimeInterval = 0
+    public var recordingLengthFormatted: String {
         return String(format: "%02.0f:%02.0f:%02.0f",
                       recordingLength / 3600, recordingLength / 60, recordingLength.truncatingRemainder(dividingBy: 60))
     }
     var recordingStart: Date?
     var timer: Timer?
     var player: AVAudioPlayer?
-    var isPlaying: Bool {
+    public var isPlaying: Bool {
         return player?.isPlaying ?? false
     }
 
-    var audioInputPortUID: String?
-    weak var delegate: TranscriberDelegate?
+    public var audioInputPortUID: String?
+    public weak var delegate: TranscriberDelegate?
 
-    override init() {
+    override public init() {
         super.init()
         reset()
     }
@@ -68,13 +69,13 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
         return inputs
     }
 
-    func reset() {
+    public func reset() {
         player = nil
         let tempDirURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         fileURL = tempDirURL.appendingPathComponent(UUID().uuidString).appendingPathExtension("mp4")
     }
 
-    func prepareToPlay() throws {
+    public func prepareToPlay() throws {
         player = try AVAudioPlayer(contentsOf: fileURL)
         recordingLength = player?.duration ?? 0
         player?.delegate = self
@@ -82,7 +83,7 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
         player?.volume = 1
     }
 
-    func playPressed() throws {
+    public func playPressed() throws {
         let audioSession = AVAudioSession.sharedInstance()
         try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
         if player == nil {
@@ -99,7 +100,7 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    func stopPressed() {
+    public func stopPressed() {
         player?.stop()
         player = nil
         timer?.invalidate()
@@ -107,7 +108,7 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
     }
 
     // swiftlint:disable:next cyclomatic_complexity function_body_length
-    func startRecording() throws {
+    public func startRecording() throws {
         let audioSession = AVAudioSession.sharedInstance()
         if audioSession.recordPermission == .granted {
             if SFSpeechRecognizer.authorizationStatus() == .authorized {
@@ -231,7 +232,7 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    func stopRecording() {
+    public func stopRecording() {
         if audioEngine.isRunning {
             audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
@@ -300,14 +301,14 @@ class Transcriber: NSObject, AVAudioPlayerDelegate {
 
     // MARK: - AVAudioPlayerDelegate
 
-    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+    public func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         if let error = error {
             print(error)
         }
         delegate?.transcriber?(self, didFinishPlaying: false)
     }
 
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+    public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         delegate?.transcriber?(self, didFinishPlaying: flag)
     }
 }

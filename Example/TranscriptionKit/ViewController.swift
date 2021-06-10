@@ -6,10 +6,20 @@
 //  Copyright (c) 2021 Francis Li. All rights reserved.
 //
 
+import AVFoundation
+import Speech
+import TranscriptionKit
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, TranscriberDelegate {
+    @IBOutlet weak var recordButton: UIButton!
+    @IBOutlet weak var btButton: UIButton!
+    @IBOutlet weak var playButton: UIButton!
+    @IBOutlet weak var transcriptLabel: UILabel!
+    @IBOutlet weak var timeLabel: UILabel!
 
+    var transcriber: Transcriber?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -20,5 +30,119 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-}
+    func present(error: Error) {
+        let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+    
+    @IBAction func recordPressed(_ sender: Any) {
+        if let transcriber = transcriber, recordButton.isSelected {
+            transcriber.stopRecording()
+            recordButton.isSelected = false
+            playButton.isEnabled = true
+            return
+        }
 
+        recordButton.isSelected = true
+        playButton.isEnabled = false
+        transcriptLabel.text = nil
+        timeLabel.text = nil
+
+        transcriber = Transcriber()
+        transcriber?.delegate = self
+        do {
+            try transcriber?.startRecording()
+        } catch {
+            present(error: error)
+            recordButton.isSelected = false
+        }
+    }
+
+    @IBAction func btPressed(_ sender: Any) {
+
+    }
+
+    @IBAction func playPressed(_ sender: Any) {
+        if let transcriber = transcriber, playButton.isSelected {
+            transcriber.stopPressed()
+            playButton.isSelected = false
+            return
+        }
+
+        playButton.isSelected = true
+        timeLabel.text = nil
+        do {
+            try transcriber?.playPressed()
+        } catch {
+            present(error: error)
+            playButton.isSelected = false
+        }
+    }
+    
+    // MARK: - TranscriberDelegate
+
+    func transcriberDidFinishRecognition(_ transcriber: Transcriber) {
+        
+    }
+
+    func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool) {
+        playButton.isSelected = false
+    }
+    
+    func transcriber(_ transcriber: Transcriber, didTransformBuffer data: [Float]) {
+        
+    }
+
+    func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus) {
+        switch status {
+        case .authorized:
+            do {
+                try transcriber.startRecording()
+            } catch {
+                present(error: error)
+            }
+        case .denied:
+            present(error: TranscriberError.speechRecognitionNotAuthorized)
+            recordButton.isSelected = false
+        default:
+            present(error: TranscriberError.unexpected)
+            recordButton.isSelected = false
+        }
+    }
+
+    func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: AVAudioSession.RecordPermission) {
+        switch status {
+        case .granted:
+            do {
+                try transcriber.startRecording()
+            } catch {
+                present(error: error)
+            }
+        case .denied:
+            present(error: TranscriberError.recordNotAuthorized)
+            recordButton.isSelected = false
+        default:
+            present(error: TranscriberError.unexpected)
+            recordButton.isSelected = false
+        }
+    }
+
+    func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval, formattedDuration duration: String) {
+        DispatchQueue.main.async { [weak self] in
+            self?.timeLabel.text = duration
+        }
+    }
+    
+    func transcriber(_ transcriber: Transcriber, didRecord seconds: TimeInterval, formattedDuration duration: String) {
+        DispatchQueue.main.async { [weak self] in
+            self?.timeLabel.text = duration
+        }
+    }
+
+    func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, sourceId: String, metadata: [String : Any], isFinal: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            self?.transcriptLabel.text = text
+        }
+    }
+}

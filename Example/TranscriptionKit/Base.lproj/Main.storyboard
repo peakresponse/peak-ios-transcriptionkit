@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="13771" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
-    <device id="retina4_7" orientation="portrait">
-        <adaptation id="fullscreen"/>
-    </device>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13772"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -20,11 +18,92 @@
                     <view key="view" contentMode="scaleToFill" id="kh9-bI-dsS">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="lTW-0k-sh5">
+                                <rect key="frame" x="126" y="617" width="123" height="30"/>
+                                <state key="normal" title="Start Transcribing"/>
+                                <state key="selected" title="Stop Transcribing"/>
+                                <connections>
+                                    <action selector="recordPressed:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="DvM-Cy-vVj"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SwN-iO-IeL">
+                                <rect key="frame" x="154" y="579" width="67" height="30"/>
+                                <state key="normal" title="Bluetooth"/>
+                                <connections>
+                                    <action selector="btPressed:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="HKa-ka-bkj"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="icA-sP-aAK">
+                                <rect key="frame" x="172.5" y="541" width="30" height="30"/>
+                                <state key="normal" title="Play"/>
+                                <connections>
+                                    <action selector="playPressed:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="VbJ-fO-MtM"/>
+                                </connections>
+                            </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="Transcript:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ju0-Eq-wOu">
+                                <rect key="frame" x="16" y="20" width="343" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Kio-TH-qgX">
+                                <rect key="frame" x="359" y="30.5" width="0.0" height="0.0"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xWn-25-X8c">
+                                <rect key="frame" x="0.0" y="49" width="375" height="484"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="03Q-40-VFt">
+                                        <rect key="frame" x="16" y="8" width="343" height="0.0"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="O6V-gj-nI3" firstAttribute="trailing" secondItem="03Q-40-VFt" secondAttribute="trailing" constant="16" id="ALd-LV-RD6"/>
+                                    <constraint firstItem="03Q-40-VFt" firstAttribute="trailing" secondItem="hcG-rA-egv" secondAttribute="trailing" constant="-16" id="SbA-yu-uwR"/>
+                                    <constraint firstItem="03Q-40-VFt" firstAttribute="top" secondItem="O6V-gj-nI3" secondAttribute="top" constant="8" id="cyx-7R-cAY"/>
+                                    <constraint firstItem="03Q-40-VFt" firstAttribute="leading" secondItem="hcG-rA-egv" secondAttribute="leading" constant="16" id="fif-Sd-hHf"/>
+                                    <constraint firstItem="O6V-gj-nI3" firstAttribute="bottom" secondItem="03Q-40-VFt" secondAttribute="bottom" constant="8" id="sAN-tL-10m"/>
+                                </constraints>
+                                <viewLayoutGuide key="contentLayoutGuide" id="O6V-gj-nI3"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="hcG-rA-egv"/>
+                            </scrollView>
+                        </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="ju0-Eq-wOu" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" constant="20" id="PMW-Mg-l3v"/>
+                            <constraint firstItem="xWn-25-X8c" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" id="Ux1-we-OxS"/>
+                            <constraint firstItem="lTW-0k-sh5" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="VDA-q3-qaj"/>
+                            <constraint firstItem="xWn-25-X8c" firstAttribute="top" secondItem="ju0-Eq-wOu" secondAttribute="bottom" constant="8" id="Vmn-6o-Tu8"/>
+                            <constraint firstItem="Kio-TH-qgX" firstAttribute="trailing" secondItem="kh9-bI-dsS" secondAttribute="trailing" constant="-16" id="Wb4-df-fnE"/>
+                            <constraint firstItem="lTW-0k-sh5" firstAttribute="bottom" secondItem="2fi-mo-0CV" secondAttribute="top" constant="-20" id="Y12-9U-nFs"/>
+                            <constraint firstItem="ju0-Eq-wOu" firstAttribute="trailing" secondItem="Kio-TH-qgX" secondAttribute="leading" id="YIp-mn-vwn"/>
+                            <constraint firstItem="icA-sP-aAK" firstAttribute="bottom" secondItem="SwN-iO-IeL" secondAttribute="top" constant="-8" id="ei1-J4-vjS"/>
+                            <constraint firstItem="icA-sP-aAK" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="oIQ-PQ-fb0"/>
+                            <constraint firstItem="SwN-iO-IeL" firstAttribute="bottom" secondItem="lTW-0k-sh5" secondAttribute="top" constant="-8" id="tWF-PR-8EH"/>
+                            <constraint firstItem="Kio-TH-qgX" firstAttribute="centerY" secondItem="ju0-Eq-wOu" secondAttribute="centerY" id="tbS-9v-PrA"/>
+                            <constraint firstItem="xWn-25-X8c" firstAttribute="trailing" secondItem="kh9-bI-dsS" secondAttribute="trailing" id="u22-Oi-wUA"/>
+                            <constraint firstItem="SwN-iO-IeL" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="utn-39-eGV"/>
+                            <constraint firstItem="xWn-25-X8c" firstAttribute="bottom" secondItem="icA-sP-aAK" secondAttribute="top" constant="-8" id="vjF-Km-rLQ"/>
+                            <constraint firstItem="ju0-Eq-wOu" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" constant="16" id="yDh-nk-6wE"/>
+                        </constraints>
                     </view>
+                    <connections>
+                        <outlet property="btButton" destination="SwN-iO-IeL" id="aca-s1-6MI"/>
+                        <outlet property="playButton" destination="icA-sP-aAK" id="Vvn-wy-Fpa"/>
+                        <outlet property="recordButton" destination="lTW-0k-sh5" id="rir-GW-XEU"/>
+                        <outlet property="timeLabel" destination="Kio-TH-qgX" id="gtc-AJ-Vo1"/>
+                        <outlet property="transcriptLabel" destination="03Q-40-VFt" id="8YV-vO-rjr"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
+            <point key="canvasLocation" x="140" y="132.68365817091455"/>
         </scene>
     </scenes>
 </document>
