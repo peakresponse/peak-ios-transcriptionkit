@@ -1,13 +1,25 @@
 PODS:
+  - AWSCore (2.24.1)
+  - AWSS3 (2.24.1):
+    - AWSCore (= 2.24.1)
+  - AWSTranscribeStreaming (2.24.1):
+    - AWSCore (= 2.24.1)
   - SwiftLint (0.43.1)
-  - TranscriptionKit (0.1.0)
+  - TranscriptionKit (0.1.0):
+    - AWSS3 (~> 2.24.1)
+    - AWSTranscribeStreaming (~> 2.24.1)
 
 DEPENDENCIES:
+  - AWSS3
+  - AWSTranscribeStreaming
   - SwiftLint
   - TranscriptionKit (from `../`)
 
 SPEC REPOS:
   trunk:
+    - AWSCore
+    - AWSS3
+    - AWSTranscribeStreaming
     - SwiftLint
 
 EXTERNAL SOURCES:
@@ -15,9 +27,12 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
+  AWSCore: f6cfada8b48d569c11b94e49e8fb184b9c1a2e7e
+  AWSS3: e5b5a1595e08c52bb321495d7122e1d331134317
+  AWSTranscribeStreaming: e80d5bd761581a271c44bb16ebc2c029e981f1f4
   SwiftLint: 99f82d07b837b942dd563c668de129a03fc3fb52
-  TranscriptionKit: 7709f315e9b97ee21384d8aed27e914decf68e96
+  TranscriptionKit: 04844b905704ccd7a583da6515e1a821b4bcc305
 
-PODFILE CHECKSUM: d3074ce459b891e5109dcbfe0780a08552c21ef3
+PODFILE CHECKSUM: f1cc6d82f0e9ba888839ec3ce6e8e2b7b87b10c9
 
 COCOAPODS: 1.10.1
