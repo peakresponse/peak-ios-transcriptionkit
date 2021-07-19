@@ -274,7 +274,7 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
                             //                            "alternativeSubstrings": segment.alternativeSubstrings,
                             //                            "confidence": segment.confidence,
                             //                            "timestamp": segment.timestamp,
-                                                        "duration": duration
+                            "duration": duration
                         ]
                         segmentsMetadata.append(segmentMetadata)
                     })
@@ -327,7 +327,6 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
         outDesc.mFramesPerPacket = framesPerPacket
         outDesc.mBitsPerChannel = 24
         outDesc.mBytesPerPacket = 0
-        let sampleRate: Double = 48000
 
         let convertFormat = AVAudioFormat(streamDescription: &outDesc)!
         let converter = AVAudioConverter(from: recordingFormat, to: convertFormat)
@@ -351,7 +350,11 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
                 ":message-type": "event",
                 ":event-type": "AudioEvent"
             ]
-
+            
+            /*
+             * AVAudioPCMBuffer -> transcribeStreamingClient.send(data
+             */
+        
             self.compressedBuffer = AVAudioCompressedBuffer(
                 format: convertFormat,
                 packetCapacity: packetSize,
