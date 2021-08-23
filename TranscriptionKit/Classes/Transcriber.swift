@@ -207,7 +207,7 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
 
         request.languageCode = .enUS
         request.mediaEncoding = .pcm
-        request.mediaSampleRateHertz = 8000
+        request.mediaSampleRateHertz = 16000
 
         // Set up delegate and its expectations
         let delegate = TranscriberStreamingClientDelegate()
@@ -261,8 +261,11 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
             var segmentsMetadata: [[String: Any]] = []
             results.forEach { result in
                 result.alternatives?.forEach({ alternative in
+                    let content = alternative.items?.map({ $0.content ?? "" }).joined(separator: " ")
+                    print("stream content: \(content ?? "")")
+
                     alternative.items?.forEach({ item in
-                        print("final content: \(item.content ?? "")")
+//                        print("final content: \(item.content ?? "")")
                         text = item.content ?? ""
                         let duration = (item.endTime?.decimalValue ?? 0) - (item.startTime?.decimalValue ?? 0)
                         let segmentMetadata: [String: Any] = [
@@ -318,18 +321,8 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
 
         let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        var outDesc = AudioStreamBasicDescription()
-        outDesc.mSampleRate = recordingFormat.sampleRate
-        outDesc.mChannelsPerFrame = 1
-        outDesc.mFormatID = kAudioFormatFLAC
-
-        let framesPerPacket: UInt32 = 1152
-        outDesc.mFramesPerPacket = framesPerPacket
-        outDesc.mBitsPerChannel = 24
-        outDesc.mBytesPerPacket = 0
-
-        let convertFormat = AVAudioFormat(streamDescription: &outDesc)!
-        let converter = AVAudioConverter(from: recordingFormat, to: convertFormat)
+        let convertFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: Double(16000), channels: 1, interleaved: true)
+        let converter = AVAudioConverter(from: recordingFormat, to: convertFormat!)
         self.converter = converter
 
         let packetSize: UInt32 = 8
@@ -345,51 +338,52 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
             let count = Int(buffer.frameLength)
             guard count > 0 else { return }
 
-            let headers = [
-                ":content-type": "audio/flac",
-                ":message-type": "event",
-                ":event-type": "AudioEvent"
-            ]
-            
-            /*
-             * AVAudioPCMBuffer -> transcribeStreamingClient.send(data
-             */
-        
-            self.compressedBuffer = AVAudioCompressedBuffer(
-                format: convertFormat,
-                packetCapacity: packetSize,
-                maximumPacketSize: self.converter.maximumOutputPacketSize
-            )
-
-            let inputBlock: AVAudioConverterInputBlock = { (_, outStatus) -> AVAudioBuffer? in
-                outStatus.pointee = AVAudioConverterInputStatus.haveData
-                return buffer
-            }
-
-            var outError: NSError?
-            self.converter.convert(to: self.compressedBuffer!, error: &outError, withInputFrom: inputBlock)
-
-            let audioBuffer = buffer.audioBufferList.pointee.mBuffers
-            if let mData = audioBuffer.mData {
-                let length = Int(audioBuffer.mDataByteSize)
-                let dataChunk: Data = Data(bytes: mData, count: length)
-
-                let chunkSize = 4096
-                let audioDataSize = dataChunk.count
-
-                var currentStart = 0
-                var currentEnd = min(chunkSize, audioDataSize - currentStart)
-
-                while currentStart < audioDataSize {
-                    let dataChunk = dataChunk[currentStart ..< currentEnd]
-                    self.transcribeStreamingClient.send(dataChunk, headers: headers)
-
-                    currentStart = currentEnd
-                    currentEnd = min(currentStart + chunkSize, audioDataSize)
+            var newBufferAvailable = true
+            let inputCallback: AVAudioConverterInputBlock = { _, outStatus in
+                if newBufferAvailable {
+                    outStatus.pointee = .haveData
+                    newBufferAvailable = false
+                    return buffer
+                } else {
+                    outStatus.pointee = .noDataNow
+                    return nil
                 }
+            }
+            let convertedBuffer = AVAudioPCMBuffer(pcmFormat: convertFormat!,
+                                                   frameCapacity: AVAudioFrameCount(convertFormat!.sampleRate) *
+                                                    buffer.frameLength /
+                                                    AVAudioFrameCount(buffer.format.sampleRate))!
+            var error: NSError?
+            converter!.convert(to: convertedBuffer, error: &error, withInputFrom: inputCallback)
 
+            if error != nil {
+                print(error!.localizedDescription)
             } else {
-                print("error")
+                let headers = [
+                    ":content-type": "audio/wav",
+                    ":message-type": "event",
+                    ":event-type": "AudioEvent"
+                ]
+
+                let audioBuffer = convertedBuffer.audioBufferList.pointee.mBuffers
+                if let mData = audioBuffer.mData {
+                    let length = Int(audioBuffer.mDataByteSize)
+                    let dataChunk: Data = Data(bytes: mData, count: length)
+
+                    let chunkSize = 4096
+                    let audioDataSize = dataChunk.count
+
+                    var currentStart = 0
+                    var currentEnd = min(chunkSize, audioDataSize - currentStart)
+
+                    while currentStart < audioDataSize {
+                        let dataChunk = dataChunk[currentStart ..< currentEnd]
+                        self.transcribeStreamingClient.send(dataChunk, headers: headers)
+
+                        currentStart = currentEnd
+                        currentEnd = min(currentStart + chunkSize, audioDataSize)
+                    }
+                }
             }
 
             self.performFFT(buffer: buffer)
