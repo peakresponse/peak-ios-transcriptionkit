@@ -8,8 +8,8 @@
 import Foundation
 import Speech
 
-open class AppleRecognizer: NSObject, Recognizer {
-    open weak var delegate: RecognizerDelegate?
+public class AppleRecognizer: NSObject, Recognizer {
+    public weak var delegate: RecognizerDelegate?
 
     let speechRecognizer = SFSpeechRecognizer()
     var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?

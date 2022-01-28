@@ -28,7 +28,7 @@ public enum TranscriberError: Error {
     case unexpected
 }
 
-open class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
+public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
     let audioEngine = AVAudioEngine()
 
     public var recognizer: Recognizer? {

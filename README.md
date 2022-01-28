@@ -1,10 +1,5 @@
 # TranscriptionKit
 
-[![CI Status](https://img.shields.io/travis/peakresponse/TranscriptionKit.svg?style=flat)](https://travis-ci.org/peakresponse/TranscriptionKit)
-[![Version](https://img.shields.io/cocoapods/v/TranscriptionKit.svg?style=flat)](https://cocoapods.org/pods/TranscriptionKit)
-[![License](https://img.shields.io/cocoapods/l/TranscriptionKit.svg?style=flat)](https://cocoapods.org/pods/TranscriptionKit)
-[![Platform](https://img.shields.io/cocoapods/p/TranscriptionKit.svg?style=flat)](https://cocoapods.org/pods/TranscriptionKit)
-
 ## Example
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
@@ -26,4 +21,19 @@ Francis Li, francis@peakresponse.net
 
 ## License
 
-TranscriptionKit is available under the LGPL license. See the LICENSE file for more info.
+TranscriptionKit  
+Copyright (C) 2022 Peak Response Inc.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
