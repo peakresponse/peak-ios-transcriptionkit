@@ -28,11 +28,12 @@ public enum TranscriberError: Error {
     case unexpected
 }
 
-open class Transcriber: NSObject, AVAudioPlayerDelegate {
+open class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
     let audioEngine = AVAudioEngine()
-    let speechRecognizer = SFSpeechRecognizer()
-    var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    var recognitionTask: SFSpeechRecognitionTask?
+
+    public var recognizer: Recognizer? {
+        didSet { recognizer?.delegate = self }
+    }
 
     public var fileURL: URL!
     public var recordingLength: TimeInterval = 0
@@ -111,7 +112,7 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
     public func startRecording() throws {
         let audioSession = AVAudioSession.sharedInstance()
         if audioSession.recordPermission == .granted {
-            if SFSpeechRecognizer.authorizationStatus() == .authorized {
+            if recognizer?.isAuthorized() ?? false {
                 if !audioEngine.isRunning {
                     try audioSession.setCategory(.playAndRecord, mode: .measurement,
                                                  options: [.allowBluetooth, .defaultToSpeaker, .duckOthers])
@@ -132,61 +133,7 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
                     try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
                     let inputNode = audioEngine.inputNode
 
-                    recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-                    guard let recognitionRequest = recognitionRequest else {
-                        fatalError("Unable to create a SFSpeechAudioBufferRecognitionRequest object") }
-                    recognitionRequest.shouldReportPartialResults = true
-
-                    // Create a recognition task for the speech recognition session.
-                    // Keep a reference to the task so that it can be canceled.
-                    recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] (result, error) in
-                        var isFinal = false
-
-                        if let result = result {
-                            // Update the text view with the results.
-                            isFinal = result.isFinal
-                            let text = result.bestTranscription.formattedString
-                            // convert the transcription segments into a metadata payload
-                            var segmentsMetadata: [[String: Any]] = []
-                            for segment in result.bestTranscription.segments {
-                                let segmentMetadata: [String: Any] = [
-                                    "substring": segment.substring,
-                                    "substringRange": [
-                                        "location": segment.substringRange.location,
-                                        "length": segment.substringRange.length
-                                    ],
-                                    "alternativeSubstrings": segment.alternativeSubstrings,
-                                    "confidence": segment.confidence,
-                                    "timestamp": segment.timestamp,
-                                    "duration": segment.duration
-                                ]
-                                segmentsMetadata.append(segmentMetadata)
-                            }
-                            let sourceId = UUID().uuidString
-                            let metadata: [String: Any] = [
-                                "type": "SPEECH",
-                                "provider": "APPLE",
-                                "segments": segmentsMetadata
-                            ]
-                            if let self = self {
-                                self.delegate?.transcriber?(self, didRecognizeText: text,
-                                                            sourceId: sourceId, metadata: metadata, isFinal: isFinal)
-                            }
-                        }
-
-                        if error != nil || isFinal {
-                            // Stop recognizing speech if there is a problem.
-                            self?.audioEngine.stop()
-                            inputNode.removeTap(onBus: 0)
-
-                            self?.recognitionRequest = nil
-                            self?.recognitionTask = nil
-
-                            if let self = self {
-                                self.delegate?.transcriberDidFinishRecognition?(self)
-                            }
-                        }
-                    }
+                    recognizer?.startTranscribing()
 
                     // Configure the microphone input.
                     let recordingFormat = inputNode.outputFormat(forBus: 0)
@@ -194,7 +141,7 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
                                                     commonFormat: recordingFormat.commonFormat, interleaved: false)
                     inputNode.installTap(onBus: 0, bufferSize: 1024,
                                          format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, _: AVAudioTime) in
-                        self?.recognitionRequest?.append(buffer)
+                        self?.recognizer?.append(buffer)
                         self?.performFFT(buffer: buffer)
                         do {
                             try audioFile.write(from: buffer)
@@ -219,7 +166,7 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
                     }
                 }
             } else {
-                SFSpeechRecognizer.requestAuthorization { [weak self] (status) in
+                recognizer?.requestAuthorization { [weak self] (status) in
                     guard let self = self else { return }
                     self.delegate?.transcriber?(self, didRequestSpeechAuthorization: status)
                 }
@@ -236,7 +183,8 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
         if audioEngine.isRunning {
             audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
-            recognitionRequest?.endAudio()
+
+            recognizer?.stopTranscribing()
 
             timer?.invalidate()
             timer = nil
@@ -294,9 +242,9 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
     }
 
     func sqrtq(_ x: [Float]) -> [Float] {
-      var results = [Float](repeating: 0.0, count: x.count)
-      vvsqrtf(&results, x, [Int32(x.count)])
-      return results
+        var results = [Float](repeating: 0.0, count: x.count)
+        vvsqrtf(&results, x, [Int32(x.count)])
+        return results
     }
 
     // MARK: - AVAudioPlayerDelegate
@@ -310,5 +258,16 @@ open class Transcriber: NSObject, AVAudioPlayerDelegate {
 
     public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         delegate?.transcriber?(self, didFinishPlaying: flag)
+    }
+
+    // MARK: - RecognizerDelegate
+
+    public func recognizer(_ recognizer: Recognizer,
+                           didRecognizeText text: String, sourceId: String, metadata: [String: Any], isFinal: Bool) {
+        delegate?.transcriber?(self, didRecognizeText: text, sourceId: sourceId, metadata: metadata, isFinal: isFinal)
+    }
+
+    public func recognizer(_ recognizer: Recognizer, didFinishWithError error: Error?) {
+        delegate?.transcriberDidFinishRecognition?(self)
     }
 }

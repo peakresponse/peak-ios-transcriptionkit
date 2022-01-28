@@ -51,6 +51,7 @@ class ViewController: UIViewController, TranscriberDelegate {
         timeLabel.text = nil
 
         transcriber = Transcriber()
+        transcriber?.recognizer = AppleRecognizer()
         transcriber?.audioInputPortUID = audioInputPortUID
         transcriber?.delegate = self
         do {
