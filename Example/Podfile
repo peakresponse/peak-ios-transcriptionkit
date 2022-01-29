@@ -1,6 +1,14 @@
 use_frameworks!
 
-platform :ios, '12.0'
+platform :ios, '12.4'
+
+plugin 'cocoapods-keys', {
+  :project => 'TranscriptionKit',
+  :keys => [
+    'AwsTranscribeAccessKeyId',
+    'AwsTranscribeSecretAccessKey'
+  ]
+}
 
 target 'TranscriptionKit_Example' do
   pod 'TranscriptionKit', :path => '../'

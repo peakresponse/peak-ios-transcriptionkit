@@ -9,6 +9,7 @@
 import AVFoundation
 import Speech
 import TranscriptionKit
+import Keys
 import UIKit
 
 class ViewController: UIViewController, TranscriberDelegate {
@@ -51,7 +52,11 @@ class ViewController: UIViewController, TranscriberDelegate {
         timeLabel.text = nil
 
         transcriber = Transcriber()
-        transcriber?.recognizer = AppleRecognizer()
+//        transcriber?.recognizer = AppleRecognizer()
+        let keys = TranscriptionKitKeys()
+        transcriber?.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
+                                                secretKey: keys.awsTranscribeSecretAccessKey,
+                                                region: .USWest2)
         transcriber?.audioInputPortUID = audioInputPortUID
         transcriber?.delegate = self
         do {

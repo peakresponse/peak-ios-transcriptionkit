@@ -23,7 +23,7 @@ public class AppleRecognizer: NSObject, Recognizer {
         SFSpeechRecognizer.requestAuthorization(handler)
     }
 
-    public func startTranscribing() {
+    public func startTranscribing(_ handler: @escaping () -> Void) {
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
             fatalError("Unable to create a SFSpeechAudioBufferRecognitionRequest object") }
@@ -74,9 +74,10 @@ public class AppleRecognizer: NSObject, Recognizer {
                 }
             }
         }
+        handler()
     }
 
-    public func append(_ buffer: AVAudioPCMBuffer) {
+    public func append(inputNode: AVAudioInputNode, buffer: AVAudioPCMBuffer) {
         recognitionRequest?.append(buffer)
     }
 

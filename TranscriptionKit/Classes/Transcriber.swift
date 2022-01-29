@@ -133,35 +133,38 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
                     try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
                     let inputNode = audioEngine.inputNode
 
-                    recognizer?.startTranscribing()
-
-                    // Configure the microphone input.
-                    let recordingFormat = inputNode.outputFormat(forBus: 0)
-                    let audioFile = try AVAudioFile(forWriting: fileURL, settings: [AVFormatIDKey: kAudioFormatMPEG4AAC],
-                                                    commonFormat: recordingFormat.commonFormat, interleaved: false)
-                    inputNode.installTap(onBus: 0, bufferSize: 1024,
-                                         format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, _: AVAudioTime) in
-                        self?.recognizer?.append(buffer)
-                        self?.performFFT(buffer: buffer)
-                        do {
-                            try audioFile.write(from: buffer)
-                        } catch {
-                            print(error)
-                        }
-                    }
-
-                    audioEngine.prepare()
-                    try audioEngine.start()
-
-                    recordingStart = Date()
-                    timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] (_) in
+                    recognizer?.startTranscribing { [weak self] in
                         guard let self = self else { return }
-                        let now = Date()
-                        if let start = self.recordingStart {
-                            let seconds = self.recordingLength + start.dist(to: now)
-                            let duration = String(format: "%02.0f:%02.0f:%02.0f",
-                                                  seconds / 3600, seconds / 60, seconds.truncatingRemainder(dividingBy: 60))
-                            self.delegate?.transcriber?(self, didRecord: seconds, formattedDuration: duration)
+                        // Configure the microphone input.
+                        let recordingFormat = inputNode.outputFormat(forBus: 0)
+                        guard let audioFile = try? AVAudioFile(forWriting: self.fileURL,
+                                                               settings: [AVFormatIDKey: kAudioFormatMPEG4AAC],
+                                                               commonFormat: recordingFormat.commonFormat,
+                                                               interleaved: false) else { return }
+                        inputNode.installTap(onBus: 0, bufferSize: 1024,
+                                             format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, _: AVAudioTime) in
+                            self?.recognizer?.append(inputNode: inputNode, buffer: buffer)
+                            self?.performFFT(buffer: buffer)
+                            do {
+                                try audioFile.write(from: buffer)
+                            } catch {
+                                print(error)
+                            }
+                        }
+
+                        self.audioEngine.prepare()
+                        try? self.audioEngine.start()
+
+                        self.recordingStart = Date()
+                        self.timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] (_) in
+                            guard let self = self else { return }
+                            let now = Date()
+                            if let start = self.recordingStart {
+                                let seconds = self.recordingLength + start.dist(to: now)
+                                let duration = String(format: "%02.0f:%02.0f:%02.0f",
+                                                      seconds / 3600, seconds / 60, seconds.truncatingRemainder(dividingBy: 60))
+                                self.delegate?.transcriber?(self, didRecord: seconds, formattedDuration: duration)
+                            }
                         }
                     }
                 }
