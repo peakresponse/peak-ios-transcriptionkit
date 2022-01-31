@@ -40,9 +40,13 @@ class ViewController: UIViewController, TranscriberDelegate {
 
     @IBAction func recordPressed(_ sender: Any) {
         if let transcriber = transcriber, recordButton.isSelected {
-            transcriber.stopRecording()
+            // disable everything until recognition finalized
+            playButton.isEnabled = false
+            recordButton.isEnabled = false
+            btButton.isEnabled = false
+            // stop
             recordButton.isSelected = false
-            playButton.isEnabled = true
+            transcriber.stopRecording()
             return
         }
 
@@ -117,8 +121,10 @@ class ViewController: UIViewController, TranscriberDelegate {
 
     // MARK: - TranscriberDelegate
 
-    func transcriberDidFinishRecognition(_ transcriber: Transcriber) {
-
+    func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?) {
+        playButton.isEnabled = true
+        recordButton.isEnabled = true
+        btButton.isEnabled = true
     }
 
     func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool) {
@@ -129,9 +135,9 @@ class ViewController: UIViewController, TranscriberDelegate {
 
     }
 
-    func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus) {
+    func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: TranscriberAuthorizationStatus) {
         switch status {
-        case .authorized:
+        case .granted:
             do {
                 try transcriber.startRecording()
             } catch {
@@ -140,13 +146,16 @@ class ViewController: UIViewController, TranscriberDelegate {
         case .denied:
             present(error: TranscriberError.speechRecognitionNotAuthorized)
             recordButton.isSelected = false
+        case .restricted:
+            present(error: TranscriberError.speechRecognitionRestricted)
+            recordButton.isSelected = false
         default:
             present(error: TranscriberError.unexpected)
             recordButton.isSelected = false
         }
     }
 
-    func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: AVAudioSession.RecordPermission) {
+    func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: TranscriberAuthorizationStatus) {
         switch status {
         case .granted:
             do {

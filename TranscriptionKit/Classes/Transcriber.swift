@@ -10,6 +10,17 @@ import Accelerate
 import AVFoundation
 import Speech
 
+@objc public enum TranscriberAuthorizationStatus: Int {
+    case granted, denied, restricted, unknown
+}
+
+public enum TranscriberError: Error {
+    case recordNotAuthorized
+    case speechRecognitionNotAuthorized
+    case speechRecognitionRestricted
+    case unexpected
+}
+
 @objc public protocol TranscriberDelegate {
     @objc optional func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool)
     @objc optional func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval, formattedDuration duration: String)
@@ -17,15 +28,9 @@ import Speech
                                     sourceId: String, metadata: [String: Any], isFinal: Bool)
     @objc optional func transcriber(_ transcriber: Transcriber, didRecord seconds: TimeInterval, formattedDuration duration: String)
     @objc optional func transcriber(_ transcriber: Transcriber, didTransformBuffer data: [Float])
-    @objc optional func transcriberDidFinishRecognition(_ transcriber: Transcriber)
-    @objc optional func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: AVAudioSession.RecordPermission)
-    @objc optional func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus)
-}
-
-public enum TranscriberError: Error {
-    case recordNotAuthorized
-    case speechRecognitionNotAuthorized
-    case unexpected
+    @objc optional func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?)
+    @objc optional func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: TranscriberAuthorizationStatus)
+    @objc optional func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: TranscriberAuthorizationStatus)
 }
 
 public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
@@ -133,7 +138,7 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
                     try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
                     let inputNode = audioEngine.inputNode
 
-                    recognizer?.startTranscribing { [weak self] in
+                    try recognizer?.startTranscribing { [weak self] in
                         guard let self = self else { return }
                         // Configure the microphone input.
                         let recordingFormat = inputNode.outputFormat(forBus: 0)
@@ -171,7 +176,18 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
             } else {
                 recognizer?.requestAuthorization { [weak self] (status) in
                     guard let self = self else { return }
-                    self.delegate?.transcriber?(self, didRequestSpeechAuthorization: status)
+                    var transcriberStatus: TranscriberAuthorizationStatus
+                    switch status {
+                    case .denied:
+                        transcriberStatus = .denied
+                    case .restricted:
+                        transcriberStatus = .restricted
+                    case .authorized:
+                        transcriberStatus = .granted
+                    default:
+                        transcriberStatus = .unknown
+                    }
+                    self.delegate?.transcriber?(self, didRequestSpeechAuthorization: transcriberStatus)
                 }
             }
         } else {
@@ -271,6 +287,6 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
     }
 
     public func recognizer(_ recognizer: Recognizer, didFinishWithError error: Error?) {
-        delegate?.transcriberDidFinishRecognition?(self)
+        delegate?.transcriberDidFinishRecognition?(self, withError: error)
     }
 }

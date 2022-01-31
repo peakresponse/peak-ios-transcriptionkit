@@ -32,6 +32,11 @@ public class AWSRecognizer: NSObject, Recognizer {
     var region: AWSRegionType
     var client: AWSTranscribeStreaming?
 
+    var isStarted = false
+    var isFinal = false
+    var fullTranscript = ""
+    var fullTranscriptSegmentsMetadata: [[String: Any]] = []
+
     public init(accessKey: String, secretKey: String, region: AWSRegionType) {
         self.accessKey = accessKey
         self.secretKey = secretKey
@@ -47,29 +52,27 @@ public class AWSRecognizer: NSObject, Recognizer {
         handler(.authorized)
     }
 
-    public func startTranscribing(_ handler: @escaping () -> Void) {
+    public func startTranscribing(_ handler: @escaping () -> Void) throws {
         let credentialsProvider = AWSStaticCredentialsProvider(accessKey: accessKey, secretKey: secretKey)
         let configuration = AWSServiceConfiguration(region: region, credentialsProvider: credentialsProvider)
         AWSServiceManager.default().defaultServiceConfiguration = configuration
 
-        guard let config = AWSServiceManager.default().defaultServiceConfiguration else {
-            fatalError("Can't get default service configuration")
-        }
+        guard let config = AWSServiceManager.default().defaultServiceConfiguration else { throw TranscriberError.unexpected }
 
         AWSTranscribeStreaming.register(with: config, forKey: accessKey)
         client = AWSTranscribeStreaming(forKey: accessKey)
-
+        guard client != nil else { throw TranscriberError.unexpected }
         let delegate = AWSRecognizerClientDelegate()
         delegate.connectionStatusCallback = { (status, error) in
             if status == .connected {
                 DispatchQueue.main.async {
-                    print("Connected")
                     handler()
                 }
             }
-            if status == .closed && error == nil {
-                DispatchQueue.main.async {
-                    print("Disconnected")
+            if status == .closed {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.recognizer(self, didFinishWithError: error)
                 }
             }
         }
@@ -78,16 +81,20 @@ public class AWSRecognizer: NSObject, Recognizer {
         }
         client?.setDelegate(delegate, callbackQueue: DispatchQueue.global())
 
-        guard let request = AWSTranscribeStreamingStartStreamTranscriptionRequest() else {
-            fatalError("request unexpectedly nil")
-        }
+        guard let request = AWSTranscribeStreamingStartStreamTranscriptionRequest() else { throw TranscriberError.unexpected }
         request.languageCode = .enUS
         request.mediaEncoding = .pcm
         request.mediaSampleRateHertz = 16000
 
+        isStarted = true
+        isFinal = false
+        fullTranscript = ""
+        fullTranscriptSegmentsMetadata = []
+
         client?.startTranscriptionWSS(request)
     }
 
+    // swiftlint:disable:next function_body_length
     public func append(inputNode: AVAudioInputNode, buffer: AVAudioPCMBuffer) {
         let count = Int(buffer.frameLength)
         guard count > 0 else { return }
@@ -146,83 +153,74 @@ public class AWSRecognizer: NSObject, Recognizer {
     }
 
     public func stopTranscribing() {
+        isStarted = false
         client?.sendEndFrame()
-        client?.endTranscription()
+        if isFinal {
+            client?.endTranscription()
+        }
     }
 
     // MARK: - AWSTranscribeStreamingClientDelegate
 
+    // swiftlint:disable:next function_body_length
     func didReceiveEvent(_ event: AWSTranscribeStreamingTranscriptResultStream?, decodingError: Error?) {
-        if let error = decodingError {
-            fatalError("Unexpected error receiving event: \(error)")
-        }
-
-        guard let event = event else {
-            fatalError("event unexpectedly nil")
-        }
-
-        guard let transcriptEvent = event.transcriptEvent else {
-            fatalError("transcriptEvent unexpectedly nil: event may be an error \(event)")
-        }
-
-        guard let results = transcriptEvent.transcript?.results else {
-            print("No results, waiting for next event")
+        if let decodingError = decodingError {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.client?.endTranscription()
+                self.delegate?.recognizer(self, didFinishWithError: decodingError)
+            }
             return
         }
 
-        guard let firstResult = results.first else {
-            print("firstResult nil--possibly a partial result: \(event)")
+        guard let transcriptResults = event?.transcriptEvent?.transcript?.results, !transcriptResults.isEmpty else {
             return
         }
 
-        guard let isPartial = firstResult.isPartial as? Bool else {
-            fatalError("isPartial unexpectedly nil, or cannot cast NSNumber to Bool")
-        }
-
+        var isFinal = true
         var text = ""
         var segmentsMetadata: [[String: Any]] = []
-        results.forEach { result in
-            result.alternatives?.forEach({ alternative in
-                let content = alternative.items?.map({ $0.content ?? "" }).joined(separator: " ")
-                print("stream content: \(content ?? "")")
-
-                alternative.items?.forEach({ item in
-//                        print("final content: \(item.content ?? "")")
-                    text = item.content ?? ""
-                    let duration = (item.endTime?.decimalValue ?? 0) - (item.startTime?.decimalValue ?? 0)
-                    let segmentMetadata: [String: Any] = [
-                        "substring": text,
-                        "substringRange": [
-                            // "location": segment.substringRange.location,
-                            "length": text.count
-                        ],
-                        //                            "alternativeSubstrings": segment.alternativeSubstrings,
-                        //                            "confidence": segment.confidence,
-                        //                            "timestamp": segment.timestamp,
-                        "duration": duration
-                    ]
-                    segmentsMetadata.append(segmentMetadata)
-                })
-            })
+        for transcriptResult in transcriptResults {
+            isFinal = isFinal && !(transcriptResult.isPartial as? Bool ?? true)
+            if let alternative = transcriptResult.alternatives?.first {
+                let transcript = alternative.transcript ?? ""
+                var index = transcript.startIndex
+                alternative.items?.forEach { (item) in
+                    if let content = item.content,
+                       let range = transcript.range(of: content, options: [], range: index..<transcript.endIndex, locale: nil),
+                       let startTime = item.startTime, let endTime = item.endTime {
+                        let segmentMetadata: [String: Any] = [
+                            "substring": content,
+                            "substringRange": [
+                                "location": transcript.distance(from: transcript.startIndex, to: range.lowerBound),
+                                "length": content.count
+                            ],
+                            "timestamp": startTime.doubleValue,
+                            "duration": endTime.doubleValue - startTime.doubleValue
+                        ]
+                        segmentsMetadata.append(segmentMetadata)
+                        index = range.upperBound
+                    }
+                }
+                text = "\(text) \(transcript)".trimmingCharacters(in: .whitespacesAndNewlines)
+            }
         }
-        // Update the text view with the results.
-        let isFinal = !isPartial
         // convert the transcription segments into a metadata payload
         let sourceId = UUID().uuidString
         let metadata: [String: Any] = [
             "type": "SPEECH",
             "provider": "AWS",
-            "segments": segmentsMetadata
+            "segments": fullTranscriptSegmentsMetadata + segmentsMetadata
         ]
-        delegate?.recognizer(self, didRecognizeText: text,
-                                  sourceId: sourceId, metadata: metadata, isFinal: isFinal)
-
-        if /*error != nil ||*/ isFinal {
-            DispatchQueue.main.async {
-                print("Ending transcription")
-                self.client?.endTranscription()
+        delegate?.recognizer(self, didRecognizeText: "\(fullTranscript) \(text)".trimmingCharacters(in: .whitespacesAndNewlines),
+                             sourceId: sourceId, metadata: metadata, isFinal: !isStarted && isFinal)
+        if isFinal {
+            fullTranscript = "\(fullTranscript) \(text)".trimmingCharacters(in: .whitespacesAndNewlines)
+            fullTranscriptSegmentsMetadata.append(contentsOf: segmentsMetadata)
+            if !isStarted {
+                client?.endTranscription()
             }
-            delegate?.recognizer(self, didFinishWithError: nil)
         }
+        self.isFinal = isFinal
     }
 }

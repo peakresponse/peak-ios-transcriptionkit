@@ -23,10 +23,9 @@ public class AppleRecognizer: NSObject, Recognizer {
         SFSpeechRecognizer.requestAuthorization(handler)
     }
 
-    public func startTranscribing(_ handler: @escaping () -> Void) {
+    public func startTranscribing(_ handler: @escaping () -> Void) throws {
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        guard let recognitionRequest = recognitionRequest else {
-            fatalError("Unable to create a SFSpeechAudioBufferRecognitionRequest object") }
+        guard let recognitionRequest = recognitionRequest else { throw TranscriberError.unexpected }
         recognitionRequest.shouldReportPartialResults = true
         // Create a recognition task for the speech recognition session.
         // Keep a reference to the task so that it can be canceled.
