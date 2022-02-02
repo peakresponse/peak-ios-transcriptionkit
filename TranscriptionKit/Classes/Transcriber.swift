@@ -58,6 +58,8 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
 
     override public init() {
         super.init()
+        recognizer = AppleRecognizer()
+        recognizer?.delegate = self // set explicitly because didSet not called during initialization
         reset()
     }
 

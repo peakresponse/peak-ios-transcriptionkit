@@ -56,11 +56,10 @@ class ViewController: UIViewController, TranscriberDelegate {
         timeLabel.text = nil
 
         transcriber = Transcriber()
-//        transcriber?.recognizer = AppleRecognizer()
-        let keys = TranscriptionKitKeys()
-        transcriber?.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
-                                                secretKey: keys.awsTranscribeSecretAccessKey,
-                                                region: .USWest2)
+//        let keys = TranscriptionKitKeys()
+//        transcriber?.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
+//                                                secretKey: keys.awsTranscribeSecretAccessKey,
+//                                                region: .USWest2)
         transcriber?.audioInputPortUID = audioInputPortUID
         transcriber?.delegate = self
         do {
