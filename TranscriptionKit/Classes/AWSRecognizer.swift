@@ -29,6 +29,7 @@ public class AWSRecognizer: NSObject, Recognizer {
 
     var accessKey: String
     var secretKey: String
+    var sessionToken: String?
     var region: AWSRegionType
     var client: AWSTranscribeStreaming?
 
@@ -37,9 +38,10 @@ public class AWSRecognizer: NSObject, Recognizer {
     var fullTranscript = ""
     var fullTranscriptSegmentsMetadata: [[String: Any]] = []
 
-    public init(accessKey: String, secretKey: String, region: AWSRegionType) {
+    public init(accessKey: String, secretKey: String, sessionToken: String? = nil, region: AWSRegionType) {
         self.accessKey = accessKey
         self.secretKey = secretKey
+        self.sessionToken = sessionToken
         self.region = region
         super.init()
     }
@@ -53,7 +55,12 @@ public class AWSRecognizer: NSObject, Recognizer {
     }
 
     public func startTranscribing(_ handler: @escaping () -> Void) throws {
-        let credentialsProvider = AWSStaticCredentialsProvider(accessKey: accessKey, secretKey: secretKey)
+        var credentialsProvider: AWSCredentialsProvider
+        if let sessionToken = sessionToken {
+            credentialsProvider = AWSBasicSessionCredentialsProvider(accessKey: accessKey, secretKey: secretKey, sessionToken: sessionToken)
+        } else {
+            credentialsProvider = AWSStaticCredentialsProvider(accessKey: accessKey, secretKey: secretKey)
+        }
         let configuration = AWSServiceConfiguration(region: region, credentialsProvider: credentialsProvider)
         AWSServiceManager.default().defaultServiceConfiguration = configuration
 
