@@ -220,7 +220,7 @@ public class AWSRecognizer: NSObject, Recognizer {
             "segments": fullTranscriptSegmentsMetadata + segmentsMetadata
         ]
         delegate?.recognizer(self, didRecognizeText: "\(fullTranscript) \(text)".trimmingCharacters(in: .whitespacesAndNewlines),
-                             sourceId: sourceId, metadata: metadata, isFinal: !isStarted && isFinal)
+                             sourceId: sourceId, metadata: metadata, isFinal: isFinal)
         if isFinal {
             fullTranscript = "\(fullTranscript) \(text)".trimmingCharacters(in: .whitespacesAndNewlines)
             fullTranscriptSegmentsMetadata.append(contentsOf: segmentsMetadata)
