@@ -24,8 +24,9 @@ public enum TranscriberError: Error {
 @objc public protocol TranscriberDelegate {
     @objc optional func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool)
     @objc optional func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval, formattedDuration duration: String)
-    @objc optional func transcriber(_ transcriber: Transcriber, didRecognizeText text: String,
-                                    sourceId: String, metadata: [String: Any], isFinal: Bool)
+    // swiftlint:disable:next function_parameter_count
+    @objc optional func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, fileId: String,
+                                    transcriptId: String, metadata: [String: Any], isFinal: Bool)
     @objc optional func transcriber(_ transcriber: Transcriber, didRecord seconds: TimeInterval, formattedDuration duration: String)
     @objc optional func transcriber(_ transcriber: Transcriber, didTransformBuffer data: [Float])
     @objc optional func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?)
@@ -40,6 +41,7 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
         didSet { recognizer?.delegate = self }
     }
 
+    public var fileId: String!
     public var fileURL: URL!
     public var recordingLength: TimeInterval = 0
     public var recordingLengthFormatted: String {
@@ -80,7 +82,8 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
     public func reset() {
         player = nil
         let tempDirURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        fileURL = tempDirURL.appendingPathComponent(UUID().uuidString).appendingPathExtension("mp4")
+        fileId = UUID().uuidString
+        fileURL = tempDirURL.appendingPathComponent(fileId).appendingPathExtension("mp4")
     }
 
     public func prepareToPlay() throws {
@@ -284,8 +287,9 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
     // MARK: - RecognizerDelegate
 
     public func recognizer(_ recognizer: Recognizer,
-                           didRecognizeText text: String, sourceId: String, metadata: [String: Any], isFinal: Bool) {
-        delegate?.transcriber?(self, didRecognizeText: text, sourceId: sourceId, metadata: metadata, isFinal: isFinal)
+                           didRecognizeText text: String, transcriptId: String, metadata: [String: Any], isFinal: Bool) {
+        delegate?.transcriber?(self, didRecognizeText: text, fileId: fileId, transcriptId: transcriptId,
+                               metadata: metadata, isFinal: isFinal)
     }
 
     public func recognizer(_ recognizer: Recognizer, didFinishWithError error: Error?) {

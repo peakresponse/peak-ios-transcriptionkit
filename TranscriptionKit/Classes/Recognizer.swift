@@ -10,7 +10,7 @@ import Foundation
 import Speech
 
 public protocol RecognizerDelegate: AnyObject {
-    func recognizer(_ recognizer: Recognizer, didRecognizeText text: String, sourceId: String, metadata: [String: Any], isFinal: Bool)
+    func recognizer(_ recognizer: Recognizer, didRecognizeText text: String, transcriptId: String, metadata: [String: Any], isFinal: Bool)
     func recognizer(_ recognizer: Recognizer, didFinishWithError error: Error?)
 }
 

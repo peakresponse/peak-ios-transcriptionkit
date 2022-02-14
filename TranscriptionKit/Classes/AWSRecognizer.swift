@@ -213,14 +213,14 @@ public class AWSRecognizer: NSObject, Recognizer {
             }
         }
         // convert the transcription segments into a metadata payload
-        let sourceId = UUID().uuidString
+        let transcriptId = UUID().uuidString
         let metadata: [String: Any] = [
             "type": "SPEECH",
             "provider": "AWS",
             "segments": fullTranscriptSegmentsMetadata + segmentsMetadata
         ]
         delegate?.recognizer(self, didRecognizeText: "\(fullTranscript) \(text)".trimmingCharacters(in: .whitespacesAndNewlines),
-                             sourceId: sourceId, metadata: metadata, isFinal: isFinal)
+                             transcriptId: transcriptId, metadata: metadata, isFinal: isFinal)
         if isFinal {
             fullTranscript = "\(fullTranscript) \(text)".trimmingCharacters(in: .whitespacesAndNewlines)
             fullTranscriptSegmentsMetadata.append(contentsOf: segmentsMetadata)

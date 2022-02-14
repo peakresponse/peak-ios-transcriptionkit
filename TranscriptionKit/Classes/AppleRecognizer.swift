@@ -52,14 +52,15 @@ public class AppleRecognizer: NSObject, Recognizer {
                     ]
                     segmentsMetadata.append(segmentMetadata)
                 }
-                let sourceId = UUID().uuidString
+                let transcriptId = UUID().uuidString
                 let metadata: [String: Any] = [
                     "type": "SPEECH",
                     "provider": "APPLE",
                     "segments": segmentsMetadata
                 ]
                 if let self = self {
-                    self.delegate?.recognizer(self, didRecognizeText: text, sourceId: sourceId, metadata: metadata, isFinal: isFinal)
+                    self.delegate?.recognizer(self, didRecognizeText: text, transcriptId: transcriptId,
+                                              metadata: metadata, isFinal: isFinal)
                 }
             }
 
