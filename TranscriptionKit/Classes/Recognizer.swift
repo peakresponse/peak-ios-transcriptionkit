@@ -19,6 +19,6 @@ public protocol Recognizer: AnyObject {
     func isAuthorized() -> Bool
     func requestAuthorization(_ handler: @escaping (SFSpeechRecognizerAuthorizationStatus) -> Void)
     func startTranscribing(_ handler: @escaping () -> Void) throws
-    func append(inputNode: AVAudioInputNode, buffer: AVAudioPCMBuffer)
+    func append(recordingFormat: AVAudioFormat, buffer: AVAudioPCMBuffer)
     func stopTranscribing()
 }

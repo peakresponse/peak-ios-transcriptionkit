@@ -77,7 +77,7 @@ public class AppleRecognizer: NSObject, Recognizer {
         handler()
     }
 
-    public func append(inputNode: AVAudioInputNode, buffer: AVAudioPCMBuffer) {
+    public func append(recordingFormat: AVAudioFormat, buffer: AVAudioPCMBuffer) {
         recognitionRequest?.append(buffer)
     }
 

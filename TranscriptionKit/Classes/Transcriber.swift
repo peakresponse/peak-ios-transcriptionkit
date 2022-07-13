@@ -153,7 +153,7 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
                                                                interleaved: false) else { return }
                         inputNode.installTap(onBus: 0, bufferSize: 1024,
                                              format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, _: AVAudioTime) in
-                            self?.recognizer?.append(inputNode: inputNode, buffer: buffer)
+                            self?.recognizer?.append(recordingFormat: recordingFormat, buffer: buffer)
                             self?.performFFT(buffer: buffer)
                             do {
                                 try audioFile.write(from: buffer)

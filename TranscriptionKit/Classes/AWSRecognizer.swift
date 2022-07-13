@@ -102,11 +102,10 @@ public class AWSRecognizer: NSObject, Recognizer {
     }
 
     // swiftlint:disable:next function_body_length
-    public func append(inputNode: AVAudioInputNode, buffer: AVAudioPCMBuffer) {
+    public func append(recordingFormat: AVAudioFormat, buffer: AVAudioPCMBuffer) {
         let count = Int(buffer.frameLength)
         guard count > 0 else { return }
 
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
         guard let convertFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
                                                 sampleRate: Double(16000), channels: 1, interleaved: true) else { return }
         let convertedBuffer = AVAudioPCMBuffer(pcmFormat: convertFormat,
