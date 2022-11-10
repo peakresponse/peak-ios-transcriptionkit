@@ -30,5 +30,5 @@ TODO: Add long description of the pod here.
   # s.public_header_files = 'Pod/Classes/**/*.h'
   s.frameworks = 'Accelerate', 'AVFoundation', 'Speech'
   # s.dependency 'AFNetworking', '~> 2.3'
-  s.dependency 'AWSTranscribeStreaming', '~> 2.27.1'
+  s.dependency 'AWSTranscribeStreaming', '~> 2.28.2'
 end
