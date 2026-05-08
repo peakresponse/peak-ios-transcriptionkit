@@ -29,7 +29,9 @@ public class AppleRecognizer: NSObject, Recognizer {
         recognitionRequest.shouldReportPartialResults = true
         // Create a recognition task for the speech recognition session.
         // Keep a reference to the task so that it can be canceled.
+        print("!!!", speechRecognizer?.locale, speechRecognizer?.isAvailable)
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] (result, error) in
+            print("???", result, error)
             var isFinal = false
 
             if let result = result {
