@@ -20,6 +20,9 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
     private var audioStream: AsyncThrowingStream<TranscribeStreamingClientTypes.AudioStream, Error>?
     private var streamTask: Task<Void, Never>?
 
+    private var finalText: String = ""
+    private var finalItems: [[String: Any]] = []
+
     public init(accessKey: String, secretKey: String, region: String) {
         self.accessKey = accessKey
         self.secretKey = secretKey
@@ -33,6 +36,8 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
     }
 
     public func startTranscribing(_ handler: @escaping () -> Void) throws {
+        finalText = ""
+        finalItems = []
         audioStream = AsyncThrowingStream { [weak self] continuation in
             self?.audioContinuation = continuation
         }
@@ -92,11 +97,11 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
 
     private func handleResult(_ result: TranscribeStreamingClientTypes.Result) {
         let isFinal = !result.isPartial
-        let text = result.alternatives?.first?.transcript ?? ""
+        let resultText = result.alternatives?.first?.transcript ?? ""
         let transcriptId = result.resultId ?? UUID().uuidString
-        var itemsMetadata: [[String: Any]] = []
+        var resultItems: [[String: Any]] = []
         for item in result.alternatives?.first?.items ?? [] {
-            itemsMetadata.append([
+            resultItems.append([
                 "content": item.content ?? "",
                 "type": item.type?.rawValue ?? "",
                 "startTime": item.startTime,
@@ -104,15 +109,21 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
                 "confidence": item.confidence ?? 0.0
             ])
         }
+        if isFinal {
+            finalText = finalText.isEmpty ? resultText : "\(finalText) \(resultText)"
+            finalItems.append(contentsOf: resultItems)
+        }
+        let completeText = isFinal ? finalText : (finalText.isEmpty ? resultText : "\(finalText) \(resultText)")
+        let completeItems = isFinal ? finalItems : finalItems + resultItems
         let metadata: [String: Any] = [
             "type": "SPEECH",
             "provider": "AWS",
-            "items": itemsMetadata
+            "items": completeItems
         ]
         let delegate = self.delegate
         Task { @MainActor in
-            delegate?.recognizer(self, didRecognizeText: text, transcriptId: transcriptId,
-                                 metadata: metadata, isFinal: isFinal)
+            delegate?.recognizer(self, didRecognizeText: completeText, transcriptId: transcriptId,
+                                 metadata: metadata, isFinal: isFinal && audioStream == nil)
         }
     }
 
