@@ -10,6 +10,7 @@ import ArkanaKeys
 import AVFoundation
 import Speech
 import TranscriptionKit
+import TranscriptionKitAWS
 import UIKit
 
 class ViewController: UIViewController, TranscriberDelegate {

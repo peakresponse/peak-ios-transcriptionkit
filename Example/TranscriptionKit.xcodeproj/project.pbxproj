@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		45993FA22FAEA4F800A1F555 /* TranscriptionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 45993FA12FAEA4F800A1F555 /* TranscriptionKit */; };
 		45993FFD2FAEED9100A1F555 /* ArkanaKeys in Frameworks */ = {isa = PBXBuildFile; productRef = 45993FFC2FAEED9100A1F555 /* ArkanaKeys */; };
+		459940202FAFA0F900A1F555 /* TranscriptionKitAWS in Frameworks */ = {isa = PBXBuildFile; productRef = 4599401F2FAFA0F900A1F555 /* TranscriptionKitAWS */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				45993FFD2FAEED9100A1F555 /* ArkanaKeys in Frameworks */,
+				459940202FAFA0F900A1F555 /* TranscriptionKitAWS in Frameworks */,
 				45993FA22FAEA4F800A1F555 /* TranscriptionKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -109,7 +111,6 @@
 			);
 			mainGroup = 607FACC71AFB9204008FA782;
 			packageReferences = (
-				45993FA02FAEA4F800A1F555 /* XCLocalSwiftPackageReference "../../peak-ios-transcriptionkit" */,
 				45993FFB2FAEED9100A1F555 /* XCLocalSwiftPackageReference "ArkanaKeys/ArkanaKeys" */,
 			);
 			productRefGroup = 607FACC71AFB9204008FA782;
@@ -310,10 +311,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		45993FA02FAEA4F800A1F555 /* XCLocalSwiftPackageReference "../../peak-ios-transcriptionkit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../peak-ios-transcriptionkit";
-		};
 		45993FFB2FAEED9100A1F555 /* XCLocalSwiftPackageReference "ArkanaKeys/ArkanaKeys" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ArkanaKeys/ArkanaKeys;
@@ -328,6 +325,10 @@
 		45993FFC2FAEED9100A1F555 /* ArkanaKeys */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ArkanaKeys;
+		};
+		4599401F2FAFA0F900A1F555 /* TranscriptionKitAWS */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TranscriptionKitAWS;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

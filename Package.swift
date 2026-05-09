@@ -5,16 +5,11 @@ import PackageDescription
 
 let package = Package(
     name: "TranscriptionKit",
-    platforms: [
-        .macOS(.v14),
-        .iOS(.v15),
-    ],
+    platforms: [.iOS(.v15)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(
-            name: "TranscriptionKit",
-            targets: ["TranscriptionKit"]
-        ),
+        .library(name: "TranscriptionKit", targets: ["TranscriptionKit"]),
+        .library(name: "TranscriptionKitAWS", targets: ["TranscriptionKitAWS"])
     ],
     dependencies: [
         .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.0.0")
@@ -24,7 +19,11 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "TranscriptionKit",
+        ),
+        .target(
+            name: "TranscriptionKitAWS",
             dependencies: [
+                "TranscriptionKit",
                 .product(name: "AWSTranscribeStreaming", package: "aws-sdk-swift")
             ]
         ),

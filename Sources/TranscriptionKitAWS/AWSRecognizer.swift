@@ -8,6 +8,7 @@ import AWSTranscribeStreaming
 import Foundation
 import SmithyIdentity
 import Speech
+import TranscriptionKit
 
 public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
     public weak var delegate: RecognizerDelegate?
