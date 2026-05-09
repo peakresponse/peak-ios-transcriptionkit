@@ -14,6 +14,7 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
 
     private let accessKey: String
     private let secretKey: String
+    private let sessionToken: String?
     private let region: String
 
     private var audioContinuation: AsyncThrowingStream<TranscribeStreamingClientTypes.AudioStream, Error>.Continuation?
@@ -23,9 +24,10 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
     private var finalText: String = ""
     private var finalItems: [[String: Any]] = []
 
-    public init(accessKey: String, secretKey: String, region: String) {
+    public init(accessKey: String, secretKey: String, sessionToken: String? = nil, region: String) {
         self.accessKey = accessKey
         self.secretKey = secretKey
+        self.sessionToken = sessionToken
         self.region = region
     }
 
@@ -48,7 +50,7 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
         if streamTask == nil, let stream = audioStream {
             let sampleRate = Int(recordingFormat.sampleRate)
             let credentialResolver = StaticAWSCredentialIdentityResolver(
-                AWSCredentialIdentity(accessKey: accessKey, secret: secretKey)
+                AWSCredentialIdentity(accessKey: accessKey, secret: secretKey, sessionToken: sessionToken)
             )
             let region = self.region
             streamTask = Task { [weak self] in
