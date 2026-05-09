@@ -2,27 +2,27 @@
 
 ## Example
 
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
+To run the example project, open TranscriptionKit.xcworkspace in Xcode.
 
 ## Requirements
 
 ## Installation
 
-TranscriptionKit is available through [CocoaPods](https://cocoapods.org). To install
-it, simply add the following line to your Podfile:
+TranscriptionKit is available through [Swift Package Manager](https://swift.org/package-manager/). To install it, add the following line to your Package.swift:
 
-```ruby
-pod 'TranscriptionKit'
+```
+.package(url: "https://github.com/peakresponse/peak-ios-transcriptionkit.git", branch: "main")
 ```
 
 ## Author
 
-Francis Li, francis@peakresponse.net
+Francis Li  
+francis@peakresponse.net
 
 ## License
 
 TranscriptionKit  
-Copyright (C) 2022 Peak Response Inc.
+Copyright (C) 2022 - 2026 Peak Response Inc.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

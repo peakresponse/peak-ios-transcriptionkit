@@ -6,10 +6,11 @@
 //  Copyright (c) 2021 Francis Li. All rights reserved.
 //
 
+import ArkanaKeys
 import AVFoundation
 import Speech
 import TranscriptionKit
-import Keys
+import TranscriptionKitAWS
 import UIKit
 
 class ViewController: UIViewController, TranscriberDelegate {
@@ -56,10 +57,11 @@ class ViewController: UIViewController, TranscriberDelegate {
         timeLabel.text = nil
 
         transcriber = Transcriber()
-        let keys = TranscriptionKitKeys()
+//        transcriber?.recognizer = AppleRecognizer()
+        let keys = ArkanaKeys.Global()
         transcriber?.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
                                                 secretKey: keys.awsTranscribeSecretAccessKey,
-                                                region: .USWest2)
+                                                region: "us-west-2")
         transcriber?.audioInputPortUID = audioInputPortUID
         transcriber?.delegate = self
         do {
