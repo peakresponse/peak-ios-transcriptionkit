@@ -56,10 +56,6 @@ class ViewController: UIViewController, TranscriberDelegate {
 
         transcriber = Transcriber()
         transcriber?.recognizer = AppleRecognizer()
-//        let keys = TranscriptionKitKeys()
-//        transcriber?.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
-//                                                secretKey: keys.awsTranscribeSecretAccessKey,
-//                                                region: .USWest2)
         transcriber?.audioInputPortUID = audioInputPortUID
         transcriber?.delegate = self
         do {
