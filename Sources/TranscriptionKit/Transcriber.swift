@@ -34,7 +34,7 @@ public enum TranscriberError: Error {
     @objc optional func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: TranscriberAuthorizationStatus)
 }
 
-public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate {
+public class Transcriber: NSObject, AVAudioPlayerDelegate, @MainActor RecognizerDelegate {
     let audioEngine = AVAudioEngine()
 
     public var recognizer: Recognizer? {
