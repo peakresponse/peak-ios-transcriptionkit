@@ -10,7 +10,10 @@ import SmithyIdentity
 import Speech
 import TranscriptionKit
 
-public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
+public actor AWSRecognizer: NSObject {
+
+}
+/*, Recognizer, @unchecked Sendable {
     public weak var delegate: RecognizerDelegate?
 
     private let accessKey: String
@@ -149,3 +152,4 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
         return int16Samples.withUnsafeBytes { Data($0) }
     }
 }
+*/

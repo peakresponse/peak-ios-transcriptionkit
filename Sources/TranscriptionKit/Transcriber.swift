@@ -27,8 +27,7 @@ public protocol TranscriberDelegate: AnyObject {
 
     func transcriberDidFailToRecord(_ transcriber: Transcriber, error: Error)
     func transcriberDidRequestRecordAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus)
-    func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval)
-    func transcriberDidTransformBuffer(_ transcriber: Transcriber, data: [Float])
+    func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval, data: [Float])
     func transcriberDidFinishRecording(_ transcriber: Transcriber, duration seconds: TimeInterval)
 
     // swiftlint:disable:next function_parameter_count
@@ -44,7 +43,7 @@ extension TranscriberDelegate {
 
     public func transcriberDidFailToRecord(_ transcriber: Transcriber, error: Error) { }
     public func transcriberDidRequestRecordAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus) { }
-    public func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval) { }
+    public func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval, data: [Float]) { }
     public func transcriberDidTransformBuffer(_ transcriber: Transcriber, data: [Float]) { }
     public func transcriberDidFinishRecording(_ transcriber: Transcriber, duration seconds: TimeInterval) { }
 
@@ -129,19 +128,10 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, @MainActor Recognizer
 
     public func startRecording() throws {
         recorder.startRecording(fileURL: fileURL)
-        let start = Date()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { (_) in
-            Task { @MainActor in
-                let seconds = start.dist(to: Date())
-                self.delegate?.transcriberDidRecord(self, seconds: seconds)
-            }
-        }
     }
 
     public func stopRecording() {
         recorder.stopRecording()
-        timer?.invalidate()
-        timer = nil
     }
 
     // MARK: - AVAudioPlayerDelegate
@@ -168,7 +158,11 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, @MainActor Recognizer
 
     // MARK: - RecorderDelegate
 
-    public func recorderDidFailToStart(_ recorder: Recorder, error: any Error) {
+    public func recorderDidRecord(_ recorder: Recorder, wrappedBuffer: SendableAVAudioPCMBuffer, normalizedData: [Float], seconds: TimeInterval) {
+        delegate?.transcriberDidRecord(self, seconds: seconds, data: normalizedData)
+    }
+
+    public func recorderDidFailToRecord(_ recorder: Recorder, error: any Error) {
         delegate?.transcriberDidFailToRecord(self, error: error)
     }
 

@@ -8,8 +8,8 @@
 import Foundation
 import Speech
 
-public class AppleRecognizer: NSObject, Recognizer {
-    public weak var delegate: RecognizerDelegate?
+public actor AppleRecognizer: Recognizer {
+    @MainActor public weak var delegate: RecognizerDelegate?
 
     let speechRecognizer = SFSpeechRecognizer()
     var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -58,9 +58,12 @@ public class AppleRecognizer: NSObject, Recognizer {
                     "provider": "APPLE",
                     "segments": segmentsMetadata
                 ]
-                if let self = self {
-                    self.delegate?.recognizer(self, didRecognizeText: text, transcriptId: transcriptId,
-                                              metadata: metadata, isFinal: isFinal)
+                if let self {
+                    let copyIsFinal = isFinal
+                    Task { @MainActor in
+                        self.delegate?.recognizer(self, didRecognizeText: text, transcriptId: transcriptId,
+                                                  metadata: metadata, isFinal: copyIsFinal)
+                    }
                 }
             }
 
@@ -69,8 +72,10 @@ public class AppleRecognizer: NSObject, Recognizer {
                 self?.recognitionRequest = nil
                 self?.recognitionTask = nil
 
-                if let self = self {
-                    self.delegate?.recognizer(self, didFinishWithError: error)
+                if let self {
+                    Task { @MainActor in
+                        self.delegate?.recognizer(self, didFinishWithError: error)
+                    }
                 }
             }
         }

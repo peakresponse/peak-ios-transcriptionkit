@@ -117,11 +117,15 @@ class ViewController: UIViewController, TranscriberDelegate {
 
     // MARK: - TranscriberDelegate
 
+    func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval, data: [Float]) {
+        timeLabel.text = seconds.asTimeIntervalString()
+    }
+
     func transcriberDidFailToRecord(_ transcriber: Transcriber, error: any Error) {
         print(error)
     }
 
-    func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval) {
+    func transcriberDidFinishRecording(_ transcriber: Transcriber, seconds: TimeInterval) {
         timeLabel.text = seconds.asTimeIntervalString()
     }
 

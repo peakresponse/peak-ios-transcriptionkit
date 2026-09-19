@@ -9,18 +9,26 @@ import Accelerate
 import AVFoundation
 import Foundation
 
+public struct SendableAVAudioPCMBuffer: @unchecked Sendable {
+    let buffer: AVAudioPCMBuffer
+
+    init(_ buffer: AVAudioPCMBuffer) {
+        self.buffer = buffer
+    }
+}
+
 @MainActor public protocol RecorderDelegate: AnyObject {
-    func recorderDidFailToStart(_ recorder: Recorder, error: Error)
+    func recorderDidRecord(_ recorder: Recorder, wrappedBuffer: SendableAVAudioPCMBuffer, normalizedData: [Float], seconds: TimeInterval)
+    func recorderDidFailToRecord(_ recorder: Recorder, error: Error)
     func recorderDidFinishRecording(_ recorder: Recorder, duration: TimeInterval)
     func recorderDidRequestRecordPermission(_ recorder: Recorder, granted: Bool)
-    func recorderDidTransformBuffer(_ recorder: Recorder, data: [Float])
 }
 
 extension RecorderDelegate {
-    public func recorderDidFailToStart(_ recorder: Recorder, error: Error) { }
+    public func recorderDidRecord(_ recorder: Recorder, wrappedBuffer: SendableAVAudioPCMBuffer, normalizedData: [Float], seconds: TimeInterval) { }
+    func recorderDidFailToRecord(_ recorder: Recorder, error: Error) { }
     public func recorderDidFinishRecording(_ recorder: Recorder, duration: TimeInterval) { }
     public func recorderDidRequestRecordPermission(_ recorder: Recorder, granted: Bool) { }
-    public func recorderDidTransformBuffer(_ recorder: Recorder, data: [Float]) { }
 }
 
 public actor Recorder {
@@ -78,6 +86,9 @@ public actor Recorder {
                 let audioEngine = AVAudioEngine()
                 self.audioEngine = audioEngine
 
+                let recordingStart = Date()
+                self.recordingStart = recordingStart
+
                 try audioSession.setCategory(.playAndRecord, mode: .measurement,
                                              options: [.allowBluetoothHFP, .defaultToSpeaker, .duckOthers])
                 var customInput = false
@@ -105,23 +116,33 @@ public actor Recorder {
                                                 interleaved: false)
                 inputNode.installTap(onBus: 0, bufferSize: 1024,
                                      format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, _: AVAudioTime) in
-                    //                            self?.recognizer?.append(recordingFormat: recordingFormat, buffer: buffer)
-                    self?.performFFT(buffer: buffer)
+                    guard let self else { return }
                     do {
                         try audioFile.write(from: buffer)
+                        let normalizedData = self.performFFT(buffer: buffer)
+                        if let copy = buffer.makeCopy() {
+                            let wrapped = SendableAVAudioPCMBuffer(copy)
+                            Task { @MainActor in
+                                let now = Date()
+                                let seconds = recordingStart.dist(to: now)
+                                self.delegate?.recorderDidRecord(self, wrappedBuffer: wrapped, normalizedData: normalizedData, seconds: seconds)
+                            }
+                        }
                     } catch {
-                        print(error)
+                        Task { @MainActor in
+                            self.delegate?.recorderDidFailToRecord(self, error: error)
+                        }
                     }
                 }
 
                 audioEngine.prepare()
                 try audioEngine.start()
-
-                let recordingStart = Date()
-                self.recordingStart = recordingStart                
             } catch {
+                audioEngine = nil
+                recordingStart = nil
+
                 Task { @MainActor in
-                    delegate?.recorderDidFailToStart(self, error: error)
+                    delegate?.recorderDidFailToRecord(self, error: error)
                 }
             }
         } else {
@@ -152,7 +173,7 @@ public actor Recorder {
     /**
      * FFT implementation from: https://medium.com/deezer-engineering/real-time-music-visualization-on-the-iphone-gpu-579d631272d3
      */
-    nonisolated private func performFFT(buffer: AVAudioPCMBuffer) {
+    nonisolated private func performFFT(buffer: AVAudioPCMBuffer) -> [Float] {
         let frameCount = buffer.frameLength
         let log2n = UInt(round(log2(Double(frameCount))))
         let bufferSizePOT = Int(1 << log2n)
@@ -191,14 +212,11 @@ public actor Recorder {
 
         vDSP_destroy_fftsetup(fftSetup)
 
-        // Dispatch the normalized buffer data
-        let data = Array(UnsafeBufferPointer(start: normalizedMagnitudes, count: inputCount))
-        Task { @MainActor in
-            delegate?.recorderDidTransformBuffer(self, data: data)
-        }
+        // Return the normalized buffer data
+        return Array(UnsafeBufferPointer(start: normalizedMagnitudes, count: inputCount))
     }
 
-    private nonisolated func sqrtq(_ x: [Float]) -> [Float] {
+    nonisolated private func sqrtq(_ x: [Float]) -> [Float] {
         var results = [Float](repeating: 0.0, count: x.count)
         vvsqrtf(&results, x, [Int32(x.count)])
         return results
