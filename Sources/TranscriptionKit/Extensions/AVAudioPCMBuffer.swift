@@ -8,8 +8,8 @@
 import AVFoundation
 
 public struct SendableAVAudioPCMBuffer: @unchecked Sendable {
-    let buffer: AVAudioPCMBuffer
-    let format: AVAudioFormat
+    public let buffer: AVAudioPCMBuffer
+    public let format: AVAudioFormat
 }
 
 extension AVAudioPCMBuffer {
