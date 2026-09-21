@@ -8,7 +8,7 @@
 import AVFoundation
 
 extension AVAudioSession {
-    func hasPermissionToRecord() async -> Bool {
+    static func hasPermissionToRecord() async -> Bool {
         await withCheckedContinuation { continuation in
             if #available(iOS 17.0, *) {
                 AVAudioApplication.requestRecordPermission { authorized in

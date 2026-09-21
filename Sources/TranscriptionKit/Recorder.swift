@@ -9,14 +9,6 @@ import Accelerate
 import AVFoundation
 import Foundation
 
-public struct SendableAVAudioPCMBuffer: @unchecked Sendable {
-    let buffer: AVAudioPCMBuffer
-
-    init(_ buffer: AVAudioPCMBuffer) {
-        self.buffer = buffer
-    }
-}
-
 @MainActor public protocol RecorderDelegate: AnyObject {
     func recorderDidRecord(_ recorder: Recorder, wrappedBuffer: SendableAVAudioPCMBuffer, normalizedData: [Float], seconds: TimeInterval)
     func recorderDidFailToRecord(_ recorder: Recorder, error: Error)
@@ -61,6 +53,20 @@ public actor Recorder {
 
     public func setFileURL(_ fileURL: URL) {
         self.fileURL = fileURL
+    }
+
+    @MainActor public var isAuthorized: Bool {
+        if #available(iOS 17.0, *) {
+            return AVAudioApplication.shared.recordPermission == .granted
+        } else {
+            return AVAudioSession.sharedInstance().recordPermission == .granted
+        }
+    }
+
+    @MainActor public func requestAuthorization() {
+        Task {
+            delegate?.recorderDidRequestRecordPermission(self, granted: await AVAudioSession.hasPermissionToRecord())
+        }
     }
 
     @MainActor public func startRecording(fileURL: URL) {
@@ -121,7 +127,7 @@ public actor Recorder {
                         try audioFile.write(from: buffer)
                         let normalizedData = self.performFFT(buffer: buffer)
                         if let copy = buffer.makeCopy() {
-                            let wrapped = SendableAVAudioPCMBuffer(copy)
+                            let wrapped = SendableAVAudioPCMBuffer(buffer: copy, format: recordingFormat)
                             Task { @MainActor in
                                 let now = Date()
                                 let seconds = recordingStart.dist(to: now)
@@ -146,7 +152,7 @@ public actor Recorder {
                 }
             }
         } else {
-            let result = await audioSession.hasPermissionToRecord()
+            let result = await AVAudioSession.hasPermissionToRecord()
             Task { @MainActor in
                 delegate?.recorderDidRequestRecordPermission(self, granted: result)
             }

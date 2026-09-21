@@ -9,16 +9,25 @@ import AVFoundation
 import Foundation
 import Speech
 
+public enum RecognizerAuthorizationStatus: Int {
+    case granted, denied, restricted, unknown
+}
+
+public enum RecognizerError: Error {
+    case unauthorized, unexpected, unsupported
+}
+
 @MainActor public protocol RecognizerDelegate: AnyObject {
     func recognizer(_ recognizer: Recognizer, didRecognizeText text: String, transcriptId: String, metadata: [String: Any], isFinal: Bool)
     func recognizer(_ recognizer: Recognizer, didFinishWithError error: Error?)
+    func recognizerDidRequestAuthorization(_ recognizer: Recognizer, status: TranscriberAuthorizationStatus)
 }
 
 public protocol Recognizer: Actor {
     @MainActor var delegate: RecognizerDelegate? { get set }
-    func isAuthorized() -> Bool
-    func requestAuthorization(_ handler: @escaping (SFSpeechRecognizerAuthorizationStatus) -> Void)
-    func startTranscribing(_ handler: @escaping () -> Void) throws
-    func append(recordingFormat: AVAudioFormat, buffer: AVAudioPCMBuffer)
-    func stopTranscribing()
+    @MainActor var isAuthorized: Bool { get }
+    @MainActor func requestAuthorization()
+    @MainActor func startTranscribing()
+    @MainActor func stopTranscribing()
+    func append(wrappedBuffer: SendableAVAudioPCMBuffer)
 }

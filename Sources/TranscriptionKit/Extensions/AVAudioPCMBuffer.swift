@@ -7,6 +7,11 @@
 
 import AVFoundation
 
+public struct SendableAVAudioPCMBuffer: @unchecked Sendable {
+    let buffer: AVAudioPCMBuffer
+    let format: AVAudioFormat
+}
+
 extension AVAudioPCMBuffer {
     func makeCopy() -> AVAudioPCMBuffer? {
         // 1. Create a new buffer with matching format and capacity

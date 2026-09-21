@@ -26,6 +26,7 @@ class ViewController: UIViewController, TranscriberDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        transcriber.recognizer = AppleRecognizer()
         transcriber.delegate = self
         transcriber.reset()
     }
@@ -191,8 +192,6 @@ class ViewController: UIViewController, TranscriberDelegate {
     // swiftlint:disable:next function_parameter_count
     func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, fileId: String, transcriptId: String,
                      metadata: [String: Any], isFinal: Bool) {
-        DispatchQueue.main.async { [weak self] in
-            self?.transcriptLabel.text = text
-        }
+        transcriptLabel.text = text
     }
 }
