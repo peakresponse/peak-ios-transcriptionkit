@@ -132,11 +132,13 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate, R
 
     public func startRecording() throws {
         guard let recognizer else { throw TranscriberError.unexpected }
-        if recognizer.isAuthorized {
+        if !recognizer.isAuthorized {
+            recognizer.requestAuthorization()
+        } else if !recorder.isAuthorized {
+            recorder.requestAuthorization()
+        } else {
             recognizer.startTranscribing()
             recorder.startRecording(fileURL: fileURL)
-        } else {
-            recognizer.requestAuthorization()
         }
     }
 

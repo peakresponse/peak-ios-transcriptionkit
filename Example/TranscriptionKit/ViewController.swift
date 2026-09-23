@@ -26,11 +26,11 @@ class ViewController: UIViewController, TranscriberDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-//        transcriber.recognizer = AppleRecognizer()
-        let keys = ArkanaKeys.Global()
-        transcriber.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
-                                               secretKey: keys.awsTranscribeSecretAccessKey,
-                                               region: "us-west-2")
+        transcriber.recognizer = AppleRecognizer()
+//        let keys = ArkanaKeys.Global()
+//        transcriber.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
+//                                               secretKey: keys.awsTranscribeSecretAccessKey,
+//                                               region: "us-west-2")
         transcriber.delegate = self
         transcriber.reset()
     }
@@ -151,6 +151,7 @@ class ViewController: UIViewController, TranscriberDelegate {
     }
 
     func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?) {
+        print(error)
         playButton.isEnabled = true
         recordButton.isEnabled = true
         btButton.isEnabled = true
