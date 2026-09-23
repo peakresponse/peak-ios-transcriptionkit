@@ -86,8 +86,8 @@ public actor AppleRecognizer: Recognizer {
                     if let self {
                         let copyIsFinal = isFinal
                         Task { @MainActor in
-                            self.delegate?.recognizer(self, didRecognizeText: text, transcriptId: transcriptId,
-                                                      metadata: metadata, isFinal: copyIsFinal)
+                            self.delegate?.recognizerDidRecognize(self, text: text, transcriptId: transcriptId,
+                                                                  metadata: metadata, isFinal: copyIsFinal)
                         }
                     }
                 }
@@ -98,7 +98,7 @@ public actor AppleRecognizer: Recognizer {
                         await self?.stop()
                         if let self {
                             Task { @MainActor in
-                                self.delegate?.recognizer(self, didFinishWithError: error)
+                                self.delegate?.recognizerDidFinish(self, error: error)
                             }
                         }
                     }

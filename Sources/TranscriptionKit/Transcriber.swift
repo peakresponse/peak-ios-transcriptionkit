@@ -159,30 +159,37 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate, R
 
     // MARK: - RecognizerDelegate
 
+    public func recognizerDidRecognize(_ recognizer: Recognizer, text: String,
+                                       transcriptId: String, metadata: [String: Any], isFinal: Bool) {
+        delegate?.transcriber(self, didRecognizeText: text, fileId: fileId, transcriptId: transcriptId,
+                               metadata: metadata, isFinal: isFinal)
+    }
+
+    public func recognizerDidFinish(_ recognizer: Recognizer, error: Error?) {
+        delegate?.transcriberDidFinishRecognition(self, withError: error)
+    }
+
     public func recognizerDidRequestAuthorization(_ recognizer: any Recognizer, status: TranscriberAuthorizationStatus) {
         switch status {
         case .granted:
             do {
                 try startRecording()
             } catch {
-                print(error)
+                delegate?.transcriberDidFinishRecognition(self, withError: error)
             }
         default:
             delegate?.transcriber(self, didRequestSpeechAuthorization: status)
         }
     }
 
-    public func recognizer(_ recognizer: Recognizer,
-                           didRecognizeText text: String, transcriptId: String, metadata: [String: Any], isFinal: Bool) {
-        delegate?.transcriber(self, didRecognizeText: text, fileId: fileId, transcriptId: transcriptId,
-                               metadata: metadata, isFinal: isFinal)
-    }
-
-    public func recognizer(_ recognizer: Recognizer, didFinishWithError error: Error?) {
-        delegate?.transcriberDidFinishRecognition(self, withError: error)
-    }
-
     // MARK: - RecorderDelegate
+
+    public func recorderDidRecord(_ recorder: Recorder, wrappedBuffer: SendableAVAudioPCMBuffer, normalizedData: [Float], seconds: TimeInterval) {
+        delegate?.transcriberDidRecord(self, seconds: seconds, data: normalizedData)
+        Task.detached {
+            await self.recognizer?.append(wrappedBuffer: wrappedBuffer)
+        }
+    }
 
     public func recorderDidFailToRecord(_ recorder: Recorder, error: any Error) {
         delegate?.transcriberDidFailToRecord(self, error: error)
@@ -192,19 +199,12 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate, R
         delegate?.transcriberDidFinishRecording(self, duration: duration)
     }
 
-    public func recorderDidRecord(_ recorder: Recorder, wrappedBuffer: SendableAVAudioPCMBuffer, normalizedData: [Float], seconds: TimeInterval) {
-        delegate?.transcriberDidRecord(self, seconds: seconds, data: normalizedData)
-        Task.detached {
-            await self.recognizer?.append(wrappedBuffer: wrappedBuffer)
-        }
-    }
-
     public func recorderDidRequestRecordPermission(_ recorder: Recorder, granted: Bool) {
         if granted {
             do {
                 try startRecording()
             } catch {
-                print(error)
+                delegate?.transcriberDidFailToRecord(self, error: error)
             }
         } else {
             delegate?.transcriberDidRequestRecordAuthorization(self, status: .unknown)

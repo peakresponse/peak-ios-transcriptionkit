@@ -16,13 +16,6 @@ import Foundation
     func recorderDidRequestRecordPermission(_ recorder: Recorder, granted: Bool)
 }
 
-extension RecorderDelegate {
-    public func recorderDidRecord(_ recorder: Recorder, wrappedBuffer: SendableAVAudioPCMBuffer, normalizedData: [Float], seconds: TimeInterval) { }
-    func recorderDidFailToRecord(_ recorder: Recorder, error: Error) { }
-    public func recorderDidFinishRecording(_ recorder: Recorder, duration: TimeInterval) { }
-    public func recorderDidRequestRecordPermission(_ recorder: Recorder, granted: Bool) { }
-}
-
 public actor Recorder {
     @MainActor public var delegate: RecorderDelegate?
 

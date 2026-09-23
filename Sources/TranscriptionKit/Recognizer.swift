@@ -18,8 +18,8 @@ public enum RecognizerError: Error {
 }
 
 @MainActor public protocol RecognizerDelegate: AnyObject {
-    func recognizer(_ recognizer: Recognizer, didRecognizeText text: String, transcriptId: String, metadata: [String: Any], isFinal: Bool)
-    func recognizer(_ recognizer: Recognizer, didFinishWithError error: Error?)
+    func recognizerDidRecognize(_ recognizer: Recognizer, text: String, transcriptId: String, metadata: [String: Any], isFinal: Bool)
+    func recognizerDidFinish(_ recognizer: Recognizer, error: Error?)
     func recognizerDidRequestAuthorization(_ recognizer: Recognizer, status: TranscriberAuthorizationStatus)
 }
 

@@ -98,11 +98,11 @@ public actor AWSRecognizer: Recognizer {
                         }
                     }
                     Task { @MainActor in
-                        delegate?.recognizer(self, didFinishWithError: nil)
+                        delegate?.recognizerDidFinish(self, error: nil)
                     }
                 } catch {
                     Task { @MainActor in
-                        delegate?.recognizer(self, didFinishWithError: error)
+                        delegate?.recognizerDidFinish(self, error: error)
                     }
                 }
             }
@@ -150,8 +150,8 @@ public actor AWSRecognizer: Recognizer {
         ]
         let isFinalCopy = isFinal && audioStream == nil
         Task { @MainActor in
-            delegate?.recognizer(self, didRecognizeText: completeText, transcriptId: transcriptId,
-                                 metadata: metadata, isFinal: isFinalCopy)
+            delegate?.recognizerDidRecognize(self, text: completeText, transcriptId: transcriptId,
+                                             metadata: metadata, isFinal: isFinalCopy)
         }
     }
 
