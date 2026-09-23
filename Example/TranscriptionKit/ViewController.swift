@@ -151,10 +151,12 @@ class ViewController: UIViewController, TranscriberDelegate {
     }
 
     func transcriberDidFinishRecognition(_ transcriber: Transcriber, error: Error?) {
-        print(error)
         playButton.isEnabled = true
         recordButton.isEnabled = true
         btButton.isEnabled = true
+        if let error {
+            present(error: error)
+        }
     }
 
     func transcriberDidRequestSpeechAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus) {
