@@ -142,22 +142,22 @@ class ViewController: UIViewController, TranscriberDelegate {
         playButton.isEnabled = true
     }
 
-    func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval) {
+    func transcriberDidPlay(_ transcriber: Transcriber, seconds: TimeInterval) {
         timeLabel.text = seconds.asTimeIntervalString()
     }
 
-    func transcriberDidFinishPlaying(_ transcriber: Transcriber, successfully: Bool, error: (any Error)?) {
+    func transcriberDidFinishPlaying(_ transcriber: Transcriber, successfully: Bool, error: Error?) {
         playButton.isSelected = false
     }
 
-    func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?) {
+    func transcriberDidFinishRecognition(_ transcriber: Transcriber, error: Error?) {
         print(error)
         playButton.isEnabled = true
         recordButton.isEnabled = true
         btButton.isEnabled = true
     }
 
-    func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: TranscriberAuthorizationStatus) {
+    func transcriberDidRequestSpeechAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus) {
         switch status {
         case .granted:
             do {
@@ -177,7 +177,7 @@ class ViewController: UIViewController, TranscriberDelegate {
         }
     }
 
-    func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: TranscriberAuthorizationStatus) {
+    func transcriberDidRequestRecordAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus) {
         switch status {
         case .granted:
             do {
@@ -194,9 +194,8 @@ class ViewController: UIViewController, TranscriberDelegate {
         }
     }
 
-    // swiftlint:disable:next function_parameter_count
-    func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, fileId: String, transcriptId: String,
-                     metadata: [String: Any], isFinal: Bool) {
+    func transcriberDidRecognize(_ transcriber: Transcriber, text: String, fileId: String, transcriptId: String,
+                                 metadata: [String: Any], isFinal: Bool) {
         transcriptLabel.text = text
     }
 }

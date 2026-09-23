@@ -22,7 +22,7 @@ public enum TranscriberError: Error {
 }
 
 public protocol TranscriberDelegate: AnyObject {
-    func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval)
+    func transcriberDidPlay(_ transcriber: Transcriber, seconds: TimeInterval)
     func transcriberDidFinishPlaying(_ transcriber: Transcriber, successfully: Bool, error: Error?)
 
     func transcriberDidFailToRecord(_ transcriber: Transcriber, error: Error)
@@ -30,28 +30,10 @@ public protocol TranscriberDelegate: AnyObject {
     func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval, data: [Float])
     func transcriberDidFinishRecording(_ transcriber: Transcriber, duration seconds: TimeInterval)
 
-    // swiftlint:disable:next function_parameter_count
-    func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: TranscriberAuthorizationStatus)
-    func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, fileId: String,
-                     transcriptId: String, metadata: [String: Any], isFinal: Bool)
-    func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?)
-}
-
-extension TranscriberDelegate {
-    public func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval) { }
-    public func transcriberDidFinishPlaying(_ transcriber: Transcriber, successfully: Bool, error: Error?) { }
-
-    public func transcriberDidFailToRecord(_ transcriber: Transcriber, error: Error) { }
-    public func transcriberDidRequestRecordAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus) { }
-    public func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval, data: [Float]) { }
-    public func transcriberDidTransformBuffer(_ transcriber: Transcriber, data: [Float]) { }
-    public func transcriberDidFinishRecording(_ transcriber: Transcriber, duration seconds: TimeInterval) { }
-
-    // swiftlint:disable:next function_parameter_count
-    public func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: TranscriberAuthorizationStatus) { }
-    public func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, fileId: String,
-                            transcriptId: String, metadata: [String: Any], isFinal: Bool) { }
-    public func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?) { }
+    func transcriberDidRequestSpeechAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus)
+    func transcriberDidRecognize(_ transcriber: Transcriber, text: String, fileId: String,
+                                 transcriptId: String, metadata: [String: Any], isFinal: Bool)
+    func transcriberDidFinishRecognition(_ transcriber: Transcriber, error: Error?)
 }
 
 @MainActor
@@ -115,7 +97,7 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate, R
         timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { (_) in
             Task { @MainActor in
                 if let seconds = self.player?.currentTime {
-                    self.delegate?.transcriber(self, didPlay: seconds)
+                    self.delegate?.transcriberDidPlay(self, seconds: seconds)
                 }
             }
         }
@@ -161,12 +143,12 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate, R
 
     public func recognizerDidRecognize(_ recognizer: Recognizer, text: String,
                                        transcriptId: String, metadata: [String: Any], isFinal: Bool) {
-        delegate?.transcriber(self, didRecognizeText: text, fileId: fileId, transcriptId: transcriptId,
-                               metadata: metadata, isFinal: isFinal)
+        delegate?.transcriberDidRecognize(self, text: text, fileId: fileId, transcriptId: transcriptId,
+                                          metadata: metadata, isFinal: isFinal)
     }
 
     public func recognizerDidFinish(_ recognizer: Recognizer, error: Error?) {
-        delegate?.transcriberDidFinishRecognition(self, withError: error)
+        delegate?.transcriberDidFinishRecognition(self, error: error)
     }
 
     public func recognizerDidRequestAuthorization(_ recognizer: any Recognizer, status: TranscriberAuthorizationStatus) {
@@ -175,10 +157,10 @@ public class Transcriber: NSObject, AVAudioPlayerDelegate, RecognizerDelegate, R
             do {
                 try startRecording()
             } catch {
-                delegate?.transcriberDidFinishRecognition(self, withError: error)
+                delegate?.transcriberDidFinishRecognition(self, error: error)
             }
         default:
-            delegate?.transcriber(self, didRequestSpeechAuthorization: status)
+            delegate?.transcriberDidRequestSpeechAuthorization(self, status: status)
         }
     }
 
