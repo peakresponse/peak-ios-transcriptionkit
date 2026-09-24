@@ -10,8 +10,8 @@ import SmithyIdentity
 import Speech
 import TranscriptionKit
 
-public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
-    public weak var delegate: RecognizerDelegate?
+public actor AWSRecognizer: Recognizer {
+    @MainActor public weak var delegate: RecognizerDelegate?
 
     private let accessKey: String
     private let secretKey: String
@@ -32,22 +32,37 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
         self.region = region
     }
 
-    public func isAuthorized() -> Bool { true }
-
-    public func requestAuthorization(_ handler: @escaping (SFSpeechRecognizerAuthorizationStatus) -> Void) {
-        handler(.authorized)
+    @MainActor public var isAuthorized: Bool {
+        return true
     }
 
-    public func startTranscribing(_ handler: @escaping () -> Void) throws {
+    @MainActor public func requestAuthorization() {
+        delegate?.recognizerDidRequestAuthorization(self, status: .granted)
+    }
+
+    @MainActor public func startTranscribing() {
+        Task {
+            await start()
+        }
+    }
+
+    private func setAudioContinuation(_ continuation: AsyncThrowingStream<TranscribeStreamingClientTypes.AudioStream, Error>.Continuation) {
+        self.audioContinuation = continuation
+    }
+
+    private func start() {
         finalText = ""
         finalItems = []
         audioStream = AsyncThrowingStream { [weak self] continuation in
-            self?.audioContinuation = continuation
+            Task {
+                await self?.setAudioContinuation(continuation)
+            }
         }
-        handler()
     }
 
-    public func append(recordingFormat: AVAudioFormat, buffer: AVAudioPCMBuffer) {
+    public func append(wrappedBuffer: SendableAVAudioPCMBuffer) {
+        let recordingFormat = wrappedBuffer.format
+        let buffer = wrappedBuffer.buffer
         if streamTask == nil, let stream = audioStream {
             let sampleRate = Int(recordingFormat.sampleRate)
             let credentialResolver = StaticAWSCredentialIdentityResolver(
@@ -74,17 +89,21 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
                         switch event {
                         case .transcriptevent(let transcriptEvent):
                             for result in transcriptEvent.transcript?.results ?? [] {
-                                self.handleResult(result)
+                                Task {
+                                    await self.handleResult(result)
+                                }
                             }
                         default:
                             break
                         }
                     }
-                    let delegate = self.delegate
-                    await MainActor.run { delegate?.recognizer(self, didFinishWithError: nil) }
+                    Task { @MainActor in
+                        delegate?.recognizerDidFinish(self, error: nil)
+                    }
                 } catch {
-                    let delegate = self.delegate
-                    await MainActor.run { delegate?.recognizer(self, didFinishWithError: error) }
+                    Task { @MainActor in
+                        delegate?.recognizerDidFinish(self, error: error)
+                    }
                 }
             }
         }
@@ -92,7 +111,13 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
         audioContinuation?.yield(.audioevent(.init(audioChunk: data)))
     }
 
-    public func stopTranscribing() {
+    @MainActor public func stopTranscribing() {
+        Task {
+            await stop()
+        }
+    }
+
+    private func stop() {
         audioContinuation?.finish()
         audioContinuation = nil
         audioStream = nil
@@ -123,10 +148,10 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
             "provider": "AWS",
             "items": completeItems
         ]
-        let delegate = self.delegate
+        let isFinalCopy = isFinal && audioStream == nil
         Task { @MainActor in
-            delegate?.recognizer(self, didRecognizeText: completeText, transcriptId: transcriptId,
-                                 metadata: metadata, isFinal: isFinal && audioStream == nil)
+            delegate?.recognizerDidRecognize(self, text: completeText, transcriptId: transcriptId,
+                                             metadata: metadata, isFinal: isFinalCopy)
         }
     }
 
@@ -149,3 +174,4 @@ public class AWSRecognizer: NSObject, Recognizer, @unchecked Sendable {
         return int16Samples.withUnsafeBytes { Data($0) }
     }
 }
+

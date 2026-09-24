@@ -20,12 +20,19 @@ class ViewController: UIViewController, TranscriberDelegate {
     @IBOutlet weak var transcriptLabel: UILabel!
     @IBOutlet weak var timeLabel: UILabel!
 
-    var transcriber: Transcriber?
+    var transcriber = Transcriber()
     var audioInputPortUID: String?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        transcriber.recognizer = AppleRecognizer()
+//        let keys = ArkanaKeys.Global()
+//        transcriber.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
+//                                               secretKey: keys.awsTranscribeSecretAccessKey,
+//                                               region: "us-west-2")
+        transcriber.delegate = self
+        transcriber.reset()
     }
 
     override func didReceiveMemoryWarning() {
@@ -40,7 +47,7 @@ class ViewController: UIViewController, TranscriberDelegate {
     }
 
     @IBAction func recordPressed(_ sender: Any) {
-        if let transcriber = transcriber, recordButton.isSelected {
+        if recordButton.isSelected {
             // disable everything until recognition finalized
             playButton.isEnabled = false
             recordButton.isEnabled = false
@@ -56,23 +63,15 @@ class ViewController: UIViewController, TranscriberDelegate {
         transcriptLabel.text = nil
         timeLabel.text = nil
 
-        transcriber = Transcriber()
-//        transcriber?.recognizer = AppleRecognizer()
-        let keys = ArkanaKeys.Global()
-        transcriber?.recognizer = AWSRecognizer(accessKey: keys.awsTranscribeAccessKeyId,
-                                                secretKey: keys.awsTranscribeSecretAccessKey,
-                                                region: "us-west-2")
-        transcriber?.audioInputPortUID = audioInputPortUID
-        transcriber?.delegate = self
         do {
-            try transcriber?.startRecording()
+            try transcriber.startRecording()
         } catch {
-            present(error: error)
-            recordButton.isSelected = false
+            print(error)
         }
     }
 
     @IBAction func btPressed(_ sender: Any) {
+        /*
         if btButton.isSelected {
             btButton.isSelected = false
             audioInputPortUID = nil
@@ -101,11 +100,12 @@ class ViewController: UIViewController, TranscriberDelegate {
                 present(alert, animated: true, completion: nil)
             }
         }
+         */
     }
 
     @IBAction func playPressed(_ sender: Any) {
-        if let transcriber = transcriber, playButton.isSelected {
-            transcriber.stopPressed()
+        if playButton.isSelected {
+            transcriber.stopPlayback()
             playButton.isSelected = false
             return
         }
@@ -113,7 +113,7 @@ class ViewController: UIViewController, TranscriberDelegate {
         playButton.isSelected = true
         timeLabel.text = nil
         do {
-            try transcriber?.playPressed()
+            try transcriber.startPlayback()
         } catch {
             present(error: error)
             playButton.isSelected = false
@@ -122,21 +122,44 @@ class ViewController: UIViewController, TranscriberDelegate {
 
     // MARK: - TranscriberDelegate
 
-    func transcriberDidFinishRecognition(_ transcriber: Transcriber, withError error: Error?) {
-        playButton.isEnabled = true
-        recordButton.isEnabled = true
-        btButton.isEnabled = true
+    func transcriberDidRecord(_ transcriber: Transcriber, seconds: TimeInterval, data: [Float]) {
+        timeLabel.text = seconds.asTimeIntervalString()
     }
 
-    func transcriber(_ transcriber: Transcriber, didFinishPlaying successfully: Bool) {
+    func transcriberDidFailToRecord(_ transcriber: Transcriber, error: any Error) {
+        print(error)
+    }
+
+    func transcriberDidFinishRecording(_ transcriber: Transcriber, seconds: TimeInterval) {
+        timeLabel.text = seconds.asTimeIntervalString()
+    }
+
+    func transcriberDidTransformBuffer(_ transcriber: Transcriber,  data: [Float]) {
+
+    }
+
+    func transcriberDidFinishRecording(_ transcriber: Transcriber, duration seconds: TimeInterval) {
+        playButton.isEnabled = true
+    }
+
+    func transcriberDidPlay(_ transcriber: Transcriber, seconds: TimeInterval) {
+        timeLabel.text = seconds.asTimeIntervalString()
+    }
+
+    func transcriberDidFinishPlaying(_ transcriber: Transcriber, successfully: Bool, error: Error?) {
         playButton.isSelected = false
     }
 
-    func transcriber(_ transcriber: Transcriber, didTransformBuffer data: [Float]) {
-
+    func transcriberDidFinishRecognition(_ transcriber: Transcriber, error: Error?) {
+        playButton.isEnabled = true
+        recordButton.isEnabled = true
+        btButton.isEnabled = true
+        if let error {
+            present(error: error)
+        }
     }
 
-    func transcriber(_ transcriber: Transcriber, didRequestSpeechAuthorization status: TranscriberAuthorizationStatus) {
+    func transcriberDidRequestSpeechAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus) {
         switch status {
         case .granted:
             do {
@@ -156,7 +179,7 @@ class ViewController: UIViewController, TranscriberDelegate {
         }
     }
 
-    func transcriber(_ transcriber: Transcriber, didRequestRecordAuthorization status: TranscriberAuthorizationStatus) {
+    func transcriberDidRequestRecordAuthorization(_ transcriber: Transcriber, status: TranscriberAuthorizationStatus) {
         switch status {
         case .granted:
             do {
@@ -173,23 +196,8 @@ class ViewController: UIViewController, TranscriberDelegate {
         }
     }
 
-    func transcriber(_ transcriber: Transcriber, didPlay seconds: TimeInterval, formattedDuration duration: String) {
-        DispatchQueue.main.async { [weak self] in
-            self?.timeLabel.text = duration
-        }
-    }
-
-    func transcriber(_ transcriber: Transcriber, didRecord seconds: TimeInterval, formattedDuration duration: String) {
-        DispatchQueue.main.async { [weak self] in
-            self?.timeLabel.text = duration
-        }
-    }
-
-    // swiftlint:disable:next function_parameter_count
-    func transcriber(_ transcriber: Transcriber, didRecognizeText text: String, fileId: String, transcriptId: String,
-                     metadata: [String: Any], isFinal: Bool) {
-        DispatchQueue.main.async { [weak self] in
-            self?.transcriptLabel.text = text
-        }
+    func transcriberDidRecognize(_ transcriber: Transcriber, text: String, fileId: String, transcriptId: String,
+                                 metadata: [String: Any], isFinal: Bool) {
+        transcriptLabel.text = text
     }
 }
